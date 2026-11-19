@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Minhas Finanças</title>
+<title>Finanças Família Rocha</title>
 <meta name="theme-color" content="#050505">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Finanças">
+<meta name="apple-mobile-web-app-title" content="Família Rocha">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icone-192.png">
@@ -284,14 +284,32 @@ h1, h2, h3, p { margin: 0; text-wrap: balance; }
   .login { border-radius: 20px; }
 }
 
+.marca-selo svg { width: 24px; height: auto; display: block; }
+.login-marca .marca-nome { font-size: 19px; }
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topo">
     <div class="marca">
-      <span class="marca-selo" aria-hidden="true">M</span>
-      <span class="marca-nome">Minhas Finanças</span>
+      <span class="marca-selo" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="105 130 360 260" aria-hidden="true"><g fill="#050505" stroke="#050505" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="160" cy="168" r="26" stroke="none"/>
+  <rect x="135" y="203" width="50" height="92" rx="22" stroke="none"/>
+  <path d="M152 295v72M170 295v72" stroke-width="18" fill="none"/>
+  <path d="M137 216l-14 62" stroke-width="15" fill="none"/>
+  <path d="M182 218l38 54" stroke-width="15" fill="none"/>
+  <circle cx="285" cy="168" r="26" stroke="none"/>
+  <path d="M270 203h30l26 100h-82z" stroke-width="10"/>
+  <path d="M275 303v64M295 303v64" stroke-width="18" fill="none"/>
+  <path d="M324 220l12 62" stroke-width="15" fill="none"/>
+  <path d="M258 218l-38 54" stroke-width="15" fill="none"/>
+  <circle cx="221" cy="274" r="12" stroke="none"/>
+  <circle cx="414" cy="266" r="44" fill="none" stroke-width="12"/>
+  <path d="M414 238v56M429 252c-4-8-30-10-30 4 0 15 30 10 30 25 0 13-27 11-33 3" stroke-width="10" fill="none"/>
+</g>
+</svg></span>
+      <span class="marca-nome">Finanças Família Rocha</span>
     </div>
     <nav class="mes" id="seletor-mes" aria-label="Mês exibido"></nav>
     <div class="acoes">
@@ -1861,7 +1879,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
       const fundo = document.createElement('div');
       fundo.className = 'fundo-modal fundo-login';
       fundo.innerHTML = '<form class="modal login" novalidate>' +
-        '<div class="marca login-marca"><span class="marca-selo" aria-hidden="true">M</span><span class="marca-nome">Minhas Finanças</span></div>' +
+        '<div class="marca login-marca"><span class="marca-selo" aria-hidden="true">' + document.querySelector('.marca-selo').innerHTML + '</span><span class="marca-nome">Finanças Família Rocha</span></div>' +
         '<h2 id="modal-titulo" class="cartao-titulo">Entrar</h2>' +
         '<p class="ajuda">Use o e-mail e a senha cadastrados para você.</p>' +
         '<p id="erro-login" class="erros" role="alert" hidden></p>' +

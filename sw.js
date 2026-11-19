@@ -1,5 +1,5 @@
 // Guarda a página para abrir mesmo com internet ruim. Os dados nunca ficam aqui: vêm sempre do banco.
-const VERSAO = 'financas-1795117875749';
+const VERSAO = 'financas-1795122250881';
 const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icone-192.png', './icone-512.png', './icone-180.png'];
 
 self.addEventListener('install', (ev) => {
