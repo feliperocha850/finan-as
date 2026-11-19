@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minhas Finanças</title>
+<meta name="theme-color" content="#050505">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finanças">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-180.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* Direção: preto profundo, dourado só onde há destaque (marca, mês ativo, ação principal, foco),
+   texto branco. Verde e vermelho aparecem apenas para entrada e saída.
+   Layout: faixa de 4 totais no topo; abaixo, saldo e categorias lado a lado, lista embaixo. */
+:root {
+  --fundo: #050505;
+  --superficie: #0F0F0F;
+  --superficie-2: #171614;
+  --linha: #2B2619;
+  --dourado: #D4AF5A;
+  --dourado-claro: #F2D98E;
+  --dourado-escuro: #8C6F2C;
+  --texto: #F7F5EF;
+  --texto-suave: #A9A396;
+  --positivo: #3FD08A;
+  --negativo: #FF5D5D;
+  --raio: 18px;
+  --fonte-corpo: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fonte-titulo: 'Fraunces', Georgia, 'Times New Roman', serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--fonte-corpo);
+  font-size: 15px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--dourado); outline-offset: 2px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; text-wrap: balance; }
+
+.app { max-width: 1180px; margin: 0 auto; padding: 20px 20px 48px; }
+
+/* ---------- topo ---------- */
+.topo { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; padding-bottom: 20px; }
+.marca { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.marca-selo {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  font-family: var(--fonte-titulo); font-weight: 700; font-size: 20px; color: #1a1405;
+  background: linear-gradient(145deg, var(--dourado-claro), var(--dourado) 55%, var(--dourado-escuro));
+  box-shadow: 0 6px 18px rgba(212, 175, 90, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.marca-nome { font-family: var(--fonte-titulo); font-weight: 700; font-size: 20px; letter-spacing: 0.01em; }
+
+.mes { display: flex; align-items: center; gap: 6px; }
+.mes-seta {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--linha);
+  background: var(--superficie); display: grid; place-items: center; color: var(--texto-suave);
+}
+.mes-seta:hover { color: var(--dourado); border-color: var(--dourado-escuro); }
+.mes-atual {
+  min-width: 150px; text-align: center; font-family: var(--fonte-titulo); font-weight: 700; font-size: 18px;
+  padding: 6px 14px; border-radius: 999px; background: var(--superficie-2); border: 1px solid var(--dourado-escuro);
+  color: var(--dourado-claro);
+}
+
+.acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.botao-principal, .botao-sec {
+  border-radius: 999px; padding: 9px 18px; font-weight: 700; border: 1px solid transparent;
+}
+.botao-principal {
+  color: #1a1405;
+  background: linear-gradient(145deg, var(--dourado-claro), var(--dourado) 60%, var(--dourado-escuro));
+  box-shadow: 0 6px 20px rgba(212, 175, 90, 0.22);
+}
+.botao-principal:hover { filter: brightness(1.07); }
+.botao-sec { background: transparent; border-color: var(--linha); color: var(--texto); }
+.botao-sec:hover { border-color: var(--dourado-escuro); color: var(--dourado-claro); }
+
+.aviso {
+  margin: 0 0 16px; padding: 12px 16px; border-radius: 12px; font-weight: 600;
+  background: rgba(255, 93, 93, 0.1); border: 1px solid var(--negativo); color: #ffd3d3;
+}
+
+/* ---------- grade ---------- */
+.principal { display: flex; flex-direction: column; gap: 18px; }
+.resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.grade {
+  display: grid; gap: 18px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-areas: 'saldo categorias' 'lista categorias';
+  align-items: start;
+}
+.area-saldo { grid-area: saldo; }
+.area-categorias { grid-area: categorias; }
+.area-lista { grid-area: lista; }
+
+.cartao {
+  background: linear-gradient(180deg, var(--superficie-2), var(--superficie));
+  border: 1px solid var(--linha); border-radius: var(--raio); padding: 20px;
+}
+.cartao-titulo { font-family: var(--fonte-titulo); font-weight: 700; font-size: 19px; margin-bottom: 14px; }
+
+@media (max-width: 900px) {
+  .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grade { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'saldo' 'categorias' 'lista'; }
+}
+@media (max-width: 480px) {
+  .app { padding: 16px; }
+  .acoes { width: 100%; }
+  .acoes .botao-principal { flex: 1 1 100%; order: -1; }
+  .mes { width: 100%; justify-content: space-between; }
+  .mes-atual { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ---------- resumo ---------- */
+.tile {
+  display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: var(--raio);
+  background: linear-gradient(180deg, var(--superficie-2), var(--superficie)); border: 1px solid var(--linha);
+}
+.tile-icone { flex: none; width: 54px; height: 54px; display: grid; place-items: center; }
+.tile-texto { min-width: 0; }
+.tile-rotulo { color: var(--texto-suave); font-size: 13px; font-weight: 600; }
+.tile-valor { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+.tile-comp { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--texto-suave); }
+.tile-comp-ref { color: var(--texto-suave); font-weight: 500; }
+.cor-positivo { color: var(--positivo); }
+.cor-negativo { color: var(--negativo); }
+.cor-dourado { color: var(--dourado-claro); }
+.fundo-positivo { background: var(--positivo); }
+.fundo-negativo { background: var(--negativo); }
+
+/* ---------- saldo ---------- */
+.legenda { color: var(--texto-suave); font-size: 13px; margin: -8px 0 12px; }
+.grafico svg { display: block; width: 100%; height: auto; }
+
+/* ---------- categorias ---------- */
+.rosca { display: grid; place-items: center; margin: 4px 0 14px; }
+.cat-lista, .itens { list-style: none; margin: 0; padding: 0; }
+.cat-lista { display: flex; flex-direction: column; gap: 4px; }
+.cat-linha {
+  width: 100%; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 2px 12px;
+  text-align: left; padding: 8px 10px; border-radius: 14px; background: transparent; border: 1px solid transparent;
+}
+.cat-linha:hover { background: var(--superficie-2); }
+.cat-linha[aria-pressed="true"] { border-color: var(--dourado-escuro); background: var(--superficie-2); }
+.cat-icone { grid-row: span 2; display: grid; place-items: center; }
+.cat-nome { font-weight: 700; display: flex; flex-direction: column; }
+.cat-pct { font-size: 12px; font-weight: 500; color: var(--texto-suave); }
+.cat-total { font-weight: 800; }
+.barra { grid-column: 2 / 4; height: 6px; border-radius: 3px; background: #231f15; overflow: hidden; margin-top: 4px; }
+.barra-preench { display: block; height: 100%; border-radius: 3px; }
+.limite-txt { grid-column: 2 / 4; font-size: 12px; color: var(--texto-suave); }
+.vazio { padding: 24px 8px; text-align: center; color: var(--texto-suave); list-style: none; }
+
+/* ---------- lista ---------- */
+.lista-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.lista-cab .legenda { margin: 0; }
+.filtros { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; margin-bottom: 8px; }
+.filtros input, .filtros select {
+  min-width: 0; background: #0a0a0a; border: 1px solid var(--linha); border-radius: 10px; padding: 9px 12px;
+}
+.filtros input::placeholder { color: var(--texto-suave); }
+.item {
+  width: 100%; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  text-align: left; padding: 10px 8px; background: transparent; border: 0; border-bottom: 1px solid #1c1910; border-radius: 10px;
+}
+.item:hover { background: var(--superficie-2); }
+.item-icone { display: grid; place-items: center; }
+.item-corpo { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.item-desc { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12px; color: var(--texto-suave); }
+.item-valor { font-weight: 800; white-space: nowrap; }
+.chip {
+  border: 1px solid var(--dourado-escuro); color: var(--dourado-claro); border-radius: 999px; padding: 0 8px; font-weight: 700;
+}
+.forma { font-weight: 600; }
+
+@media (max-width: 900px) {
+  .tile-valor { font-size: 19px; }
+}
+@media (max-width: 560px) {
+  .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .tile { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px; }
+  .tile-icone { width: 44px; height: 44px; }
+  .tile-icone svg { width: 100%; height: 100%; }
+  .tile-valor { font-size: 17px; }
+  .filtros { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .filtros input { grid-column: 1 / -1; }
+  .cartao { padding: 16px; }
+}
+
+/* ---------- janelas e formulários ---------- */
+.fundo-modal {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
+  background: rgba(0, 0, 0, 0.74); overflow-y: auto;
+}
+.modal {
+  width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: 22px;
+  background: linear-gradient(180deg, #1b1911, #0f0f0f); border: 1px solid var(--dourado-escuro); border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+}
+.modal-larga { width: min(720px, 100%); }
+.modal-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.modal-cab .cartao-titulo { margin: 0; }
+.modal-fechar, .botao-icone {
+  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--linha); background: transparent;
+  display: grid; place-items: center; color: var(--texto-suave);
+}
+.modal-fechar:hover { color: var(--dourado-claro); border-color: var(--dourado-escuro); }
+.botao-icone:hover { color: var(--negativo); border-color: var(--negativo); }
+.campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; min-width: 0; }
+.rotulo { font-size: 13px; font-weight: 700; color: var(--texto-suave); }
+.modal input:not([type="radio"]):not([type="color"]), .modal select {
+  width: 100%; min-width: 0; background: #0a0a0a; border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px;
+}
+.linha2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.seg { display: flex; gap: 6px; }
+.seg-op { position: relative; flex: 1 1 0; min-width: 0; }
+.seg-op input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.seg-op span {
+  display: block; text-align: center; padding: 10px 6px; border-radius: 10px; border: 1px solid var(--linha);
+  font-weight: 700; background: #0a0a0a;
+}
+.seg-op input:checked + span { border-color: var(--dourado); background: var(--superficie-2); color: var(--dourado-claro); }
+.seg-entrada input:checked + span { border-color: var(--positivo); color: var(--positivo); background: rgba(63, 208, 138, 0.1); }
+.seg-saida input:checked + span { border-color: var(--negativo); color: var(--negativo); background: rgba(255, 93, 93, 0.1); }
+.seg-op input:focus-visible + span { outline: 2px solid var(--dourado); outline-offset: 2px; }
+.seg-op.desativado { opacity: 0.35; }
+.seg-op.desativado input { cursor: not-allowed; }
+.bloco-credito { border: 1px solid var(--linha); border-radius: 14px; padding: 14px 14px 2px; margin-bottom: 14px; background: #0c0b08; }
+.ajuda { color: var(--texto-suave); font-size: 13px; margin-bottom: 12px; }
+.ajuda-destaque { color: var(--dourado-claro); }
+.erros {
+  color: #ffd3d3; background: rgba(255, 93, 93, 0.1); border: 1px solid var(--negativo); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 12px; font-weight: 600;
+}
+.modal-rodape { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
+.espaco { flex: 1; }
+.botao-perigo { background: transparent; border: 1px solid var(--negativo); color: var(--negativo); border-radius: 999px; padding: 9px 18px; font-weight: 700; }
+.botao-perigo-cheio { background: var(--negativo); color: #2a0505; border: 0; border-radius: 999px; padding: 10px 20px; font-weight: 800; }
+.botao-principal:disabled { opacity: 0.6; cursor: wait; }
+.texto-modal { margin-bottom: 16px; }
+.cat-linhas { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.cat-edit { display: grid; grid-template-columns: 40px minmax(0, 1fr) 44px 130px 100px; gap: 8px; align-items: center; }
+.cat-edit.removida .ce-nome, .cat-edit.removida .ce-cor, .cat-edit.removida .ce-limite, .cat-edit.removida .cat-icone { opacity: 0.4; }
+.ce-cor { padding: 2px; height: 40px; width: 44px; border-radius: 10px; background: transparent; border: 1px solid var(--linha); }
+.ce-aviso { grid-column: 2 / -1; font-size: 12px; color: var(--negativo); }
+.ce-fixa { font-size: 12px; color: var(--texto-suave); text-align: center; }
+
+@media (max-width: 560px) {
+  .fundo-modal { place-items: end center; padding: 0; }
+  .modal { width: 100%; max-height: 92%; border-radius: 20px 20px 0 0; padding: 18px 16px 22px; }
+  .cat-edit { grid-template-columns: 36px minmax(0, 1fr) 44px; }
+  .cat-edit .cat-icone { grid-row: span 2; }
+  .cat-edit .ce-limite { grid-column: 2 / 3; }
+  .cat-edit [data-acao], .cat-edit .ce-fixa { grid-column: 3; }
+}
+
+/* ---------- login (versão instalável) ---------- */
+.fundo-login { background: var(--fundo); z-index: 100; }
+.login { width: min(400px, 100%); }
+.login-marca { margin-bottom: 18px; }
+.login-entrar { width: 100%; margin-top: 4px; padding: 12px 18px; }
+@media (max-width: 560px) {
+  .fundo-login { place-items: center; padding: 16px; }
+  .login { border-radius: 20px; }
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topo">
+    <div class="marca">
+      <span class="marca-selo" aria-hidden="true">M</span>
+      <span class="marca-nome">Minhas Finanças</span>
+    </div>
+    <nav class="mes" id="seletor-mes" aria-label="Mês exibido"></nav>
+    <div class="acoes">
+      <button id="btn-atualizar" class="botao-sec" type="button">Atualizar</button>
+      <button id="btn-categorias" class="botao-sec" type="button">Categorias</button>
+      <button id="btn-exportar" class="botao-sec" type="button">Exportar CSV</button>
+      <button id="btn-sair" class="botao-sec" type="button" hidden>Sair</button>
+      <button id="btn-novo" class="botao-principal" type="button">Novo lançamento</button>
+    </div>
+  </header>
+  <div id="aviso" class="aviso" role="alert" hidden></div>
+  <main class="principal">
+    <section id="resumo" class="resumo" aria-label="Resumo do mês"></section>
+    <div class="grade">
+      <section id="saldo" class="cartao area-saldo" aria-label="Evolução do saldo"></section>
+      <section id="categorias" class="cartao area-categorias" aria-label="Gastos por categoria"></section>
+      <section id="lista" class="cartao area-lista" aria-label="Lançamentos"></section>
+    </div>
+  </main>
+</div>
+<div id="camada"></div>
+<script>
+(function (raiz, fabrica) {
+  if (typeof module === 'object' && module.exports) module.exports = fabrica();
+  else raiz.Financas = fabrica();
+})(this, function () {
+  'use strict';
+
+  // ---------- dinheiro ----------
+
+  // "1.234,56" -> 123456 (centavos). Inválido, zero ou negativo -> null.
+  function parseValor(texto) {
+    if (typeof texto !== 'string') return null;
+    const t = texto.replace(/R\$/gi, '').replace(/\s+/g, '');
+    if (!/^(\d{1,3}(\.\d{3})+|\d+)(,\d{1,2})?$/.test(t)) return null;
+    const [inteiro, dec = ''] = t.split(',');
+    const reais = parseInt(inteiro.replace(/\./g, ''), 10);
+    const centavos = parseInt((dec + '00').slice(0, 2), 10);
+    const total = reais * 100 + centavos;
+    return total > 0 ? total : null;
+  }
+
+  const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  function formatBRL(centavos) {
+    return fmtBRL.format(centavos / 100);
+  }
+
+  // ---------- datas (texto AAAA-MM-DD, sem Date) ----------
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function bissexto(a) { return (a % 4 === 0 && a % 100 !== 0) || a % 400 === 0; }
+
+  function diasDoMes(mes) {
+    const [a, m] = mes.split('-').map(Number);
+    if (m === 2) return bissexto(a) ? 29 : 28;
+    return [4, 6, 9, 11].includes(m) ? 30 : 31;
+  }
+
+  function dataValida(iso) {
+    if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+    const [a, m, d] = iso.split('-').map(Number);
+    if (a < 1900 || m < 1 || m > 12 || d < 1) return false;
+    return d <= diasDoMes(iso.slice(0, 7));
+  }
+
+  function mesDe(iso) { return iso.slice(0, 7); }
+
+  function formatData(iso) {
+    const [a, m, d] = iso.split('-');
+    return d + '/' + m + '/' + a;
+  }
+
+  function somarMeses(mes, n) {
+    const [a, m] = mes.split('-').map(Number);
+    const total = a * 12 + (m - 1) + n;
+    const ano = Math.floor(total / 12);
+    const mm = total - ano * 12 + 1;
+    return ano + '-' + pad2(mm);
+  }
+
+  // Soma n meses a uma data, prendendo o dia ao fim do mês quando preciso.
+  function dataNoMes(iso, n) {
+    const mes = somarMeses(mesDe(iso), n);
+    const dia = Math.min(parseInt(iso.slice(8, 10), 10), diasDoMes(mes));
+    return mes + '-' + pad2(dia);
+  }
+
+  // ---------- html ----------
+
+  function escaparHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ---------- parcelas e agregações ----------
+
+  // Uma compra no crédito em N vezes vira N ocorrências, uma por mês.
+  // O resto da divisão vai, centavo a centavo, para as primeiras parcelas.
+  function expandirParcelas(l) {
+    const n = l.forma === 'credito' && Number.isInteger(l.parcelas) && l.parcelas > 1 ? l.parcelas : 1;
+    const base = Math.floor(l.valor / n);
+    const resto = l.valor - base * n;
+    return Array.from({ length: n }, (_, i) => {
+      const o = {
+        lancamentoId: l.id, tipo: l.tipo, data: dataNoMes(l.data, i), descricao: l.descricao,
+        valor: base + (i < resto ? 1 : 0), categoriaId: l.categoriaId, forma: l.forma,
+        parcelaNum: i + 1, parcelaTotal: n,
+      };
+      if (l.cartao) o.cartao = l.cartao;
+      return o;
+    });
+  }
+
+  function ocorrenciasDoMes(lancamentos, mes) {
+    return lancamentos
+      .flatMap(expandirParcelas)
+      .filter((o) => mesDe(o.data) === mes)
+      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+  }
+
+  function totaisDoMes(oc) {
+    const t = { entradas: 0, saidas: 0, saldo: 0, credito: 0 };
+    for (const o of oc) {
+      if (o.tipo === 'entrada') t.entradas += o.valor;
+      else {
+        t.saidas += o.valor;
+        if (o.forma === 'credito') t.credito += o.valor;
+      }
+    }
+    t.saldo = t.entradas - t.saidas;
+    return t;
+  }
+
+  function gastosPorCategoria(oc, categorias) {
+    const somas = new Map();
+    let soma = 0;
+    for (const o of oc) {
+      if (o.tipo !== 'saida') continue;
+      somas.set(o.categoriaId, (somas.get(o.categoriaId) || 0) + o.valor);
+      soma += o.valor;
+    }
+    const itens = [];
+    for (const [id, total] of somas) {
+      if (total <= 0) continue;
+      const c = categorias.find((x) => x.id === id) || { id, nome: 'Outros', cor: '#8a8a8a', limite: null };
+      const limite = c.limite == null ? null : c.limite;
+      itens.push({
+        categoriaId: id, nome: c.nome, cor: c.cor, total,
+        percentual: (total / soma) * 100,
+        limite,
+        usoLimite: limite ? total / limite : null,
+        estourou: limite != null && total > limite,
+      });
+    }
+    return itens.sort((a, b) => b.total - a.total);
+  }
+
+  function serieSaldoDiario(oc, mes) {
+    const dias = diasDoMes(mes);
+    const delta = new Array(dias + 1).fill(0);
+    for (const o of oc) {
+      if (mesDe(o.data) !== mes) continue;
+      delta[parseInt(o.data.slice(8, 10), 10)] += o.tipo === 'entrada' ? o.valor : -o.valor;
+    }
+    const serie = [];
+    let saldo = 0;
+    for (let d = 1; d <= dias; d++) {
+      saldo += delta[d];
+      serie.push({ dia: d, saldo });
+    }
+    return serie;
+  }
+
+  function compararMeses(atual, anterior) {
+    const comp = (k) => {
+      const delta = atual[k] - anterior[k];
+      return { delta, percentual: anterior[k] === 0 ? null : (delta / Math.abs(anterior[k])) * 100 };
+    };
+    return { entradas: comp('entradas'), saidas: comp('saidas'), saldo: comp('saldo') };
+  }
+
+  function normalizar(s) {
+    return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
+  function filtrarOcorrencias(oc, f) {
+    const busca = f.busca ? normalizar(f.busca.trim()) : '';
+    return oc.filter((o) =>
+      (!f.tipo || o.tipo === f.tipo) &&
+      (!f.categoriaId || o.categoriaId === f.categoriaId) &&
+      (!busca || normalizar(o.descricao).includes(busca)));
+  }
+
+  // ---------- categorias ----------
+
+  // Sem verde nem vermelho: essas cores ficam reservadas para entrada e saída.
+  const CATEGORIAS_INICIAIS = [
+    { id: 'alimentacao', nome: 'Alimentação', cor: '#FF9F5A' },
+    { id: 'saude', nome: 'Saúde', cor: '#38BDF8' },
+    { id: 'educacao', nome: 'Educação', cor: '#6C8CFF' },
+    { id: 'moradia', nome: 'Moradia', cor: '#A78BFA' },
+    { id: 'transporte', nome: 'Transporte', cor: '#22D3EE' },
+    { id: 'lazer', nome: 'Lazer', cor: '#F472B6' },
+    { id: 'familia', nome: 'Família', cor: '#E879F9' },
+    { id: 'empresarial', nome: 'Empresarial', cor: '#94A3B8' },
+    { id: 'pessoal', nome: 'Pessoal', cor: '#B0A3FF' },
+    { id: 'outros', nome: 'Outros', cor: '#6B7280' },
+  ].map((c) => Object.assign({}, c, { limite: null }));
+
+  // Apagar uma categoria move seus lançamentos para "Outros". Não altera a entrada.
+  function removerCategoria(estado, id) {
+    if (id === 'outros') throw new Error('categoria protegida');
+    return {
+      categorias: estado.categorias.filter((c) => c.id !== id).map((c) => Object.assign({}, c)),
+      lancamentos: estado.lancamentos.map((l) =>
+        Object.assign({}, l, l.categoriaId === id ? { categoriaId: 'outros' } : {})),
+    };
+  }
+
+  // ---------- lançamento: validação e formulário ----------
+
+  const FORMAS = ['debito', 'credito', 'pix', 'dinheiro'];
+
+  function validarLancamento(l) {
+    const erros = [];
+    if (l.tipo !== 'entrada' && l.tipo !== 'saida') erros.push('Escolha o tipo');
+    if (!dataValida(l.data)) erros.push('Data inválida');
+    if (typeof l.descricao !== 'string' || !l.descricao.trim()) erros.push('Informe uma descrição');
+    if (!Number.isInteger(l.valor) || l.valor <= 0) erros.push('Valor inválido');
+    if (!l.categoriaId) erros.push('Escolha a categoria');
+    if (!FORMAS.includes(l.forma)) erros.push('Escolha a forma de pagamento');
+    if (l.forma === 'credito') {
+      if (l.tipo === 'entrada') erros.push('Entrada não pode ser no crédito');
+      if (typeof l.cartao !== 'string' || !l.cartao.trim()) erros.push('Informe o cartão');
+      if (!Number.isInteger(l.parcelas) || l.parcelas < 1 || l.parcelas > 48) {
+        erros.push('Parcelas devem ficar entre 1 e 48');
+      }
+    }
+    return erros;
+  }
+
+  let contadorId = 0;
+  function novoId() {
+    contadorId += 1;
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + contadorId.toString(36);
+  }
+
+  function montarLancamento(campos, id) {
+    const credito = campos.forma === 'credito';
+    const l = {
+      id: id || novoId(),
+      tipo: campos.tipo,
+      data: campos.data,
+      descricao: String(campos.descricao || '').trim(),
+      valor: parseValor(String(campos.valor || '')),
+      categoriaId: campos.categoriaId,
+      forma: campos.forma,
+    };
+    if (credito) {
+      l.cartao = String(campos.cartao || '').trim();
+      const p = String(campos.parcelas || '').trim();
+      l.parcelas = p === '' ? 1 : Number(p);
+    }
+    const erros = validarLancamento(l);
+    return { lancamento: erros.length ? null : l, erros };
+  }
+
+  // ---------- CSV (separador ; e BOM, para abrir direto no Excel em português) ----------
+
+  const NOME_FORMA = { debito: 'Débito', credito: 'Crédito', pix: 'Pix', dinheiro: 'Dinheiro' };
+
+  function campoCSV(v) {
+    const s = String(v);
+    return /[;"\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function valorCSV(centavos) {
+    return Math.floor(centavos / 100) + ',' + String(centavos % 100).padStart(2, '0');
+  }
+
+  function paraCSV(lancamentos, categorias) {
+    const nome = (id) => {
+      const c = categorias.find((x) => x.id === id);
+      return c ? c.nome : 'Outros';
+    };
+    const linhas = [['Data', 'Tipo', 'Descrição', 'Valor', 'Categoria', 'Forma', 'Cartão', 'Parcelas']];
+    for (const l of lancamentos) {
+      linhas.push([
+        formatData(l.data),
+        l.tipo === 'entrada' ? 'Entrada' : 'Saída',
+        l.descricao,
+        valorCSV(l.valor),
+        nome(l.categoriaId),
+        NOME_FORMA[l.forma] || l.forma,
+        l.cartao || '',
+        l.parcelas == null ? '' : l.parcelas,
+      ]);
+    }
+    return '﻿' + linhas.map((ln) => ln.map(campoCSV).join(';')).join('\r\n');
+  }
+
+  return {
+    parseValor, formatBRL,
+    diasDoMes, dataValida, mesDe, formatData, somarMeses, dataNoMes,
+    escaparHtml,
+    expandirParcelas, ocorrenciasDoMes, totaisDoMes, gastosPorCategoria,
+    serieSaldoDiario, compararMeses, filtrarOcorrencias,
+    CATEGORIAS_INICIAIS, removerCategoria,
+    validarLancamento, montarLancamento, novoId, paraCSV,
+  };
+});
+
+;
+(function (raiz, fabrica) {
+  if (typeof module === 'object' && module.exports) module.exports = fabrica();
+  else raiz.Graficos = fabrica();
+})(this, function () {
+  'use strict';
+
+  let contador = 0;
+  const n2 = (v) => (Number.isFinite(v) ? v.toFixed(2) : '0.00');
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Rosca: uma circunferência tracejada por fatia, partindo do topo e girando no sentido horário.
+  function svgRosca(itens, opcoes) {
+    const T = opcoes.tamanho;
+    const c = T / 2;
+    const esp = T * 0.15;
+    const r = (T - esp) / 2 - 8;
+    const circ = 2 * Math.PI * r;
+    const validos = itens.filter((i) => i.valor > 0);
+    const total = validos.reduce((s, i) => s + i.valor, 0);
+    const cabecalho = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + T + ' ' + T +
+      '" width="100%" role="img" aria-label="Gastos por categoria" style="max-width:' + T + 'px">';
+
+    if (!total) {
+      return cabecalho +
+        '<circle cx="' + n2(c) + '" cy="' + n2(c) + '" r="' + n2(r) + '" fill="none" style="stroke:var(--linha)" stroke-width="' + n2(esp) + '"/>' +
+        '<text x="' + n2(c) + '" y="' + n2(c + 5) + '" text-anchor="middle" font-size="' + n2(T * 0.08) +
+        '" style="fill:var(--texto-suave)">Sem gastos</text></svg>';
+    }
+
+    const sel = opcoes.selecionadoId;
+    const folga = validos.length > 1 ? 3 : 0;
+    let acumulado = 0;
+    let fatias = '';
+    for (const i of validos) {
+      const compr = Math.max((i.valor / total) * circ - folga, 0.5);
+      const ativo = sel && sel === i.id;
+      fatias += '<circle data-id="' + esc(i.id) + '"' + (ativo ? ' data-ativo="true"' : '') +
+        ' cx="' + n2(c) + '" cy="' + n2(c) + '" r="' + n2(r) + '" fill="none" stroke="' + esc(i.cor) +
+        '" stroke-width="' + n2(ativo ? esp + 6 : esp) + '" stroke-dasharray="' + n2(compr) + ' ' + n2(circ - compr) +
+        '" stroke-dashoffset="' + n2(-acumulado) + '" transform="rotate(-90 ' + n2(c) + ' ' + n2(c) +
+        ')" style="cursor:pointer;transition:stroke-width .15s' + (sel && !ativo ? ';opacity:.4' : '') + '"/>';
+      acumulado += (i.valor / total) * circ;
+    }
+
+    let centro = '';
+    if (opcoes.centro) {
+      centro =
+        '<text x="' + n2(c) + '" y="' + n2(c - T * 0.015) + '" text-anchor="middle" font-size="' + n2(T * 0.058) +
+        '" style="fill:var(--texto-suave)">' + esc(opcoes.centro.titulo) + '</text>' +
+        '<text x="' + n2(c) + '" y="' + n2(c + T * 0.08) + '" text-anchor="middle" font-size="' + n2(T * 0.078) +
+        '" font-weight="800" style="fill:var(--texto)">' + esc(opcoes.centro.valor) + '</text>';
+    }
+    return cabecalho + fatias + centro + '</svg>';
+  }
+
+  // Linha do saldo acumulado dia a dia, com a linha do zero e a área entre as duas.
+  function svgLinhaSaldo(serie, opcoes) {
+    const W = opcoes.largura;
+    const H = opcoes.altura;
+    const pad = { l: 14, r: 18, t: 18, b: 28 };
+    const id = 'gs' + (++contador);
+    const cab = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H +
+      '" width="100%" role="img" aria-label="Evolução do saldo no mês" preserveAspectRatio="xMidYMid meet">';
+
+    const vals = serie.map((s) => s.saldo);
+    let min = Math.min(0, ...vals);
+    let max = Math.max(0, ...vals);
+    if (max === min) { min -= 1; max += 1; }
+    const folga = (max - min) * 0.08;
+    min -= folga;
+    max += folga;
+
+    const larg = W - pad.l - pad.r;
+    const alt = H - pad.t - pad.b;
+    const n = serie.length;
+    const x = (i) => (n <= 1 ? pad.l + larg / 2 : pad.l + (i * larg) / (n - 1));
+    const y = (v) => pad.t + ((max - v) / (max - min)) * alt;
+    const yz = y(0);
+
+    let corpo =
+      '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#D4AF5A" stop-opacity="0.38"/><stop offset="1" stop-color="#D4AF5A" stop-opacity="0.02"/>' +
+      '</linearGradient></defs>' +
+      '<line x1="' + n2(pad.l) + '" x2="' + n2(W - pad.r) + '" y1="' + n2(yz) + '" y2="' + n2(yz) +
+      '" stroke-dasharray="4 5" stroke-width="1" style="stroke:var(--dourado-escuro)"/>' +
+      '<text x="' + n2(pad.l) + '" y="' + n2(yz - 6) + '" font-size="11" style="fill:var(--texto-suave)">0</text>';
+
+    if (n > 0) {
+      const linha = serie.map((s, i) => n2(x(i)) + ',' + n2(y(s.saldo))).join(' ');
+      const area = n2(x(0)) + ',' + n2(yz) + ' ' + linha + ' ' + n2(x(n - 1)) + ',' + n2(yz);
+      corpo += '<polygon points="' + area + '" fill="url(#' + id + ')" stroke="none"/>';
+      corpo += '<polyline points="' + linha + '" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" style="stroke:var(--dourado)"/>';
+      for (let i = 0; i < n; i++) {
+        const d = serie[i].dia;
+        if (d === 1 || d % 5 === 0) {
+          corpo += '<text x="' + n2(x(i)) + '" y="' + n2(H - 8) + '" text-anchor="middle" font-size="11" style="fill:var(--texto-suave)">' + d + '</text>';
+        }
+      }
+      const ult = serie[n - 1];
+      corpo += '<circle cx="' + n2(x(n - 1)) + '" cy="' + n2(y(ult.saldo)) + '" r="5" stroke-width="2" style="stroke:var(--fundo);fill:' +
+        (ult.saldo >= 0 ? 'var(--positivo)' : 'var(--negativo)') + '"/>';
+    }
+    return cab + corpo + '</svg>';
+  }
+
+  return { svgRosca, svgLinhaSaldo };
+});
+
+;
+(function (raiz, fabrica) {
+  if (typeof module === 'object' && module.exports) module.exports = fabrica();
+  else raiz.Icones = fabrica();
+})(this, function () {
+  'use strict';
+
+  // Ícones em estilo 3D desenhados em SVG: gradiente de luz (claro, médio, escuro), borda inferior
+  // mais escura para dar espessura e um brilho translúcido no alto. Cada chamada gera ids próprios.
+  let contador = 0;
+
+  const PAL = {
+    dourado: ['#FFF1B8', '#E3B84F', '#8A6420'],
+    douradoLado: ['#D1A33A', '#8A6420', '#5C4012'],
+    laranja: ['#FFD3A6', '#FF9F5A', '#B5581C'],
+    marrom: ['#E9B98F', '#A9622F', '#5C3213'],
+    amarelo: ['#FFF6B0', '#FFD84A', '#C79A12'],
+    azul: ['#C3EBFF', '#38BDF8', '#126C9C'],
+    indigo: ['#CDD8FF', '#6C8CFF', '#2B3F9E'],
+    indigoEscuro: ['#6E80E6', '#2B3F9E', '#16226B'],
+    violeta: ['#DDD0FF', '#A78BFA', '#5B3FB5'],
+    violetaEscuro: ['#9279EA', '#5B3FB5', '#33217A'],
+    ciano: ['#C8F7FF', '#22D3EE', '#0E7490'],
+    vidro: ['#7BDCF5', '#0E4A62', '#04202C'],
+    rosa: ['#FFCBE4', '#F472B6', '#A3246A'],
+    fucsia: ['#F9CFFF', '#E879F9', '#8E1FA3'],
+    ardosia: ['#E6EBF2', '#94A3B8', '#475569'],
+    lilas: ['#E3DDFF', '#B0A3FF', '#5547B8'],
+    cinzaClaro: ['#F3F5F8', '#C9CED8', '#8B93A1'],
+    cinza: ['#E0E3E8', '#8B93A1', '#3F4654'],
+    cinzaEscuro: ['#6D7585', '#3F4654', '#262B35'],
+    verde: ['#CBFFE5', '#3FD08A', '#0F7A48'],
+    vermelho: ['#FFD3D3', '#FF5D5D', '#A62323'],
+    preto: ['#4A4A4A', '#1D1D1D', '#050505'],
+    roda: ['#E0E3E8', '#8B93A1', '#3F4654'],
+  };
+
+  function stops(pal) {
+    return '<stop offset="0" stop-color="' + pal[0] + '"/><stop offset=".5" stop-color="' + pal[1] +
+      '"/><stop offset="1" stop-color="' + pal[2] + '"/>';
+  }
+  // Gradiente diagonal (luz vinda do alto à esquerda).
+  function lin(p, k, pal) {
+    return '<linearGradient id="' + p + k + '" x1="0" y1="0" x2="1" y2="1">' + stops(pal) + '</linearGradient>';
+  }
+  // Gradiente fixo no espaço do desenho, para formas feitas de várias peças sem emenda.
+  function linU(p, k, pal, x1, y1, x2, y2) {
+    return '<linearGradient id="' + p + k + '" gradientUnits="userSpaceOnUse" x1="' + x1 + '" y1="' + y1 +
+      '" x2="' + x2 + '" y2="' + y2 + '">' + stops(pal) + '</linearGradient>';
+  }
+  function esf(p, k, pal) {
+    return '<radialGradient id="' + p + k + '" cx=".35" cy=".3" r=".8">' + stops(pal) + '</radialGradient>';
+  }
+  function brilho(p) {
+    return '<linearGradient id="' + p + 's" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".65"/>' +
+      '<stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>';
+  }
+  const u = (p, k) => 'url(#' + p + k + ')';
+
+  function azulejo(p, pal, lado, setas) {
+    return {
+      sombra: pal[1],
+      defs: lin(p, 'a', pal) + brilho(p),
+      corpo:
+        '<rect x="10" y="15" width="44" height="44" rx="13" fill="' + lado + '"/>' +
+        '<rect x="10" y="9" width="44" height="44" rx="13" fill="' + u(p, 'a') + '"/>' +
+        '<path d="M10 22 a13 13 0 0 1 13 -13 h18 a13 13 0 0 1 13 13 v6 q-22 8 -44 0 z" fill="' + u(p, 's') + '"/>' +
+        '<path d="' + setas + '" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+        '<path d="M21 45 h22" stroke="#fff" stroke-opacity=".9" stroke-width="4" stroke-linecap="round"/>',
+    };
+  }
+
+  const ICONES = {
+    dinheiro(p) {
+      const moeda = (y) =>
+        '<path d="M14 ' + y + ' v6 a18 7 0 0 0 36 0 v-6z" fill="' + u(p, 'b') + '"/>' +
+        '<ellipse cx="32" cy="' + y + '" rx="18" ry="7" fill="' + u(p, 'a') + '"/>' +
+        '<ellipse cx="32" cy="' + y + '" rx="12.5" ry="4.5" fill="none" stroke="#8A6420" stroke-opacity=".55" stroke-width="1.2"/>';
+      return {
+        sombra: '#E3B84F',
+        defs: lin(p, 'a', PAL.dourado) + lin(p, 'b', PAL.douradoLado),
+        corpo: moeda(46) + moeda(38) + moeda(30) +
+          '<ellipse cx="25" cy="28.4" rx="7" ry="1.7" fill="#fff" opacity=".6"/>' +
+          '<text x="32" y="33.2" text-anchor="middle" font-size="9" font-weight="800" fill="#7A5712" font-family="Manrope,Arial,sans-serif">$</text>',
+      };
+    },
+
+    entrada(p) {
+      return azulejo(p, PAL.verde, '#0F7A48', 'M32 18 v18 M23 28 l9 9 l9 -9');
+    },
+
+    saida(p) {
+      return azulejo(p, PAL.vermelho, '#A62323', 'M32 37 v-18 M23 28 l9 -9 l9 9');
+    },
+
+    cartao(p) {
+      return {
+        sombra: '#E3B84F',
+        defs: lin(p, 'a', PAL.preto) + lin(p, 'b', PAL.dourado) + brilho(p),
+        corpo:
+          '<g transform="rotate(-10 32 34)">' +
+          '<rect x="5" y="19" width="54" height="34" rx="6" fill="#5C4012"/>' +
+          '<rect x="5" y="15" width="54" height="34" rx="6" fill="' + u(p, 'a') + '" stroke="' + u(p, 'b') + '" stroke-width="1.6"/>' +
+          '<rect x="6" y="22" width="52" height="7" fill="#000" opacity=".7"/>' +
+          '<rect x="12" y="33" width="11" height="8.5" rx="2" fill="' + u(p, 'b') + '"/>' +
+          '<path d="M12 37.2 h11 M17.5 33 v8.5" stroke="#8A6420" stroke-width=".8"/>' +
+          '<rect x="38" y="38" width="14" height="3" rx="1.5" fill="' + u(p, 'b') + '" opacity=".9"/>' +
+          '<rect x="44" y="34" width="8" height="2.4" rx="1.2" fill="' + u(p, 'b') + '" opacity=".7"/>' +
+          '<path d="M5 21 a6 6 0 0 1 6 -6 h42 a6 6 0 0 1 6 6 v6 q-27 8 -54 0 z" fill="' + u(p, 's') + '" opacity=".4"/>' +
+          '</g>',
+      };
+    },
+
+    alimentacao(p) {
+      return {
+        sombra: '#FF9F5A',
+        defs: lin(p, 'a', PAL.laranja) + lin(p, 'b', PAL.marrom) + lin(p, 'c', PAL.amarelo),
+        corpo:
+          '<path d="M10 44 h44 v1 a8 8 0 0 1 -8 8 h-28 a8 8 0 0 1 -8 -8 z" fill="' + u(p, 'a') + '"/>' +
+          '<rect x="8" y="34" width="48" height="10" rx="5" fill="' + u(p, 'b') + '"/>' +
+          '<path d="M9 31 h46 v4 h-9 l-4 6 l-4 -6 h-12 l-4 6 l-4 -6 h-9 z" fill="' + u(p, 'c') + '"/>' +
+          '<path d="M9 31 a23 18 0 0 1 46 0 z" fill="' + u(p, 'a') + '"/>' +
+          '<ellipse cx="24" cy="20.5" rx="7" ry="2.6" transform="rotate(-28 24 20.5)" fill="#fff" opacity=".5"/>' +
+          '<g fill="#FFF3D6"><ellipse cx="32" cy="19" rx="2.2" ry="1.1" transform="rotate(20 32 19)"/>' +
+          '<ellipse cx="41" cy="24" rx="2.2" ry="1.1" transform="rotate(-25 41 24)"/>' +
+          '<ellipse cx="30" cy="26.5" rx="2.2" ry="1.1" transform="rotate(15 30 26.5)"/>' +
+          '<ellipse cx="22" cy="26" rx="2.2" ry="1.1" transform="rotate(-15 22 26)"/>' +
+          '<ellipse cx="38" cy="16.5" rx="2.2" ry="1.1" transform="rotate(30 38 16.5)"/></g>',
+      };
+    },
+
+    saude(p) {
+      const cruz = 'M25 10 h14 v13 h13 v14 h-13 v13 h-14 v-13 h-13 v-14 h13 z';
+      return {
+        sombra: '#38BDF8',
+        defs: lin(p, 'a', PAL.azul) + brilho(p),
+        corpo:
+          '<path d="' + cruz + '" fill="#126C9C" stroke="#126C9C" stroke-width="4" stroke-linejoin="round" transform="translate(0 4)"/>' +
+          '<path d="' + cruz + '" fill="' + u(p, 'a') + '" stroke="' + u(p, 'a') + '" stroke-width="4" stroke-linejoin="round"/>' +
+          '<path d="M25 8 h14 v14 q-7 4 -14 0 z" fill="' + u(p, 's') + '"/>' +
+          '<path d="M14 25 h10 v-1.5 q-5 -1.5 -10 -.5 z" fill="#fff" opacity=".35"/>',
+      };
+    },
+
+    educacao(p) {
+      return {
+        sombra: '#6C8CFF',
+        defs: lin(p, 'a', PAL.indigo) + lin(p, 'b', PAL.indigoEscuro) + lin(p, 'c', PAL.dourado) + brilho(p),
+        corpo:
+          '<path d="M18 31 v11 c0 6 28 6 28 0 v-11 z" fill="' + u(p, 'b') + '"/>' +
+          '<path d="M32 15 L59 27 L32 39 L5 27 z" fill="#16226B" transform="translate(0 4)"/>' +
+          '<path d="M32 15 L59 27 L32 39 L5 27 z" fill="' + u(p, 'a') + '" stroke-linejoin="round"/>' +
+          '<path d="M32 15 L59 27 L32 33 L5 27 z" fill="' + u(p, 's') + '" opacity=".6"/>' +
+          '<path d="M52 29 v14" stroke="#E3B84F" stroke-width="2" stroke-linecap="round"/>' +
+          '<circle cx="52" cy="45.5" r="3.2" fill="' + u(p, 'c') + '"/>' +
+          '<ellipse cx="32" cy="27" rx="3" ry="1.6" fill="' + u(p, 'c') + '"/>',
+      };
+    },
+
+    moradia(p) {
+      return {
+        sombra: '#A78BFA',
+        defs: lin(p, 'a', PAL.violeta) + lin(p, 'b', PAL.violetaEscuro) + lin(p, 'c', PAL.dourado) + brilho(p),
+        corpo:
+          '<rect x="42" y="12" width="8" height="14" rx="1.5" fill="' + u(p, 'b') + '"/>' +
+          '<rect x="13" y="29" width="38" height="26" rx="3" fill="' + u(p, 'a') + '"/>' +
+          '<rect x="13" y="33" width="38" height="3" fill="#000" opacity=".18"/>' +
+          '<path d="M6 33 L32 9 L58 33 z" fill="' + u(p, 'b') + '" stroke="' + u(p, 'b') + '" stroke-width="2" stroke-linejoin="round"/>' +
+          '<path d="M6 33 L32 9 L32 33 z" fill="' + u(p, 's') + '" opacity=".35"/>' +
+          '<rect x="27" y="40" width="10" height="15" rx="3" fill="' + u(p, 'c') + '"/>' +
+          '<rect x="17" y="38" width="7" height="7" rx="1.5" fill="#FFF1B8"/>' +
+          '<rect x="40" y="38" width="7" height="7" rx="1.5" fill="#FFF1B8"/>',
+      };
+    },
+
+    transporte(p) {
+      return {
+        sombra: '#22D3EE',
+        defs: lin(p, 'a', PAL.ciano) + lin(p, 'c', PAL.vidro) + lin(p, 'd', PAL.roda) + brilho(p),
+        corpo:
+          '<path d="M15 33 L22 20 H43 L52 33 z" fill="' + u(p, 'a') + '"/>' +
+          '<rect x="5" y="31" width="54" height="16" rx="7" fill="' + u(p, 'a') + '"/>' +
+          '<path d="M20 31 l4.5 -9 h7.5 v9 z" fill="' + u(p, 'c') + '"/>' +
+          '<path d="M35 31 v-9 h6.5 l6 9 z" fill="' + u(p, 'c') + '"/>' +
+          '<path d="M8 38 a6 6 0 0 1 6 -7 h36 a6 6 0 0 1 6 7 q-24 5 -48 0 z" fill="' + u(p, 's') + '" opacity=".5"/>' +
+          '<rect x="53" y="35" width="5" height="4" rx="2" fill="#FFF1B8"/>' +
+          '<circle cx="18" cy="47" r="7.5" fill="#111"/><circle cx="18" cy="47" r="3.6" fill="' + u(p, 'd') + '"/>' +
+          '<circle cx="46" cy="47" r="7.5" fill="#111"/><circle cx="46" cy="47" r="3.6" fill="' + u(p, 'd') + '"/>',
+      };
+    },
+
+    lazer(p) {
+      const formas = (fill, dy) =>
+        '<rect x="5" y="' + (19 + dy) + '" width="54" height="27" rx="13.5" fill="' + fill + '"/>' +
+        '<ellipse cx="16" cy="' + (45 + dy) + '" rx="9" ry="10" fill="' + fill + '"/>' +
+        '<ellipse cx="48" cy="' + (45 + dy) + '" rx="9" ry="10" fill="' + fill + '"/>';
+      return {
+        sombra: '#F472B6',
+        defs: linU(p, 'a', PAL.rosa, 5, 17, 59, 55) + lin(p, 'b', PAL.dourado) + brilho(p),
+        corpo:
+          formas('#A3246A', 3) + formas(u(p, 'a'), 0) +
+          '<rect x="10" y="21" width="44" height="6" rx="3" fill="' + u(p, 's') + '" opacity=".7"/>' +
+          '<rect x="17" y="26" width="6" height="14" rx="1.6" fill="#4A0F32"/>' +
+          '<rect x="13" y="30" width="14" height="6" rx="1.6" fill="#4A0F32"/>' +
+          '<circle cx="45" cy="29" r="3" fill="' + u(p, 'b') + '"/>' +
+          '<circle cx="51" cy="34" r="3" fill="' + u(p, 'b') + '"/>' +
+          '<circle cx="45" cy="39" r="3" fill="' + u(p, 'b') + '"/>',
+      };
+    },
+
+    familia(p) {
+      return {
+        sombra: '#E879F9',
+        defs: esf(p, 'a', PAL.fucsia) + esf(p, 'b', PAL.dourado) + lin(p, 'c', PAL.fucsia) + lin(p, 'd', PAL.dourado),
+        corpo:
+          '<path d="M8 46 v-7 a12 12 0 0 1 24 0 v7 z" fill="' + u(p, 'c') + '"/>' +
+          '<path d="M32 46 v-7 a12 12 0 0 1 24 0 v7 z" fill="' + u(p, 'c') + '"/>' +
+          '<circle cx="20" cy="19" r="7.5" fill="' + u(p, 'a') + '"/>' +
+          '<circle cx="44" cy="19" r="7.5" fill="' + u(p, 'a') + '"/>' +
+          '<path d="M22 56 v-5 a10 10 0 0 1 20 0 v5 z" fill="' + u(p, 'd') + '"/>' +
+          '<circle cx="32" cy="35" r="6" fill="' + u(p, 'b') + '"/>',
+      };
+    },
+
+    empresarial(p) {
+      return {
+        sombra: '#94A3B8',
+        defs: lin(p, 'a', PAL.ardosia) + lin(p, 'b', PAL.dourado) + brilho(p),
+        corpo:
+          '<path d="M23 24 v-5 a4 4 0 0 1 4 -4 h10 a4 4 0 0 1 4 4 v5" fill="none" stroke="#475569" stroke-width="4" stroke-linecap="round"/>' +
+          '<rect x="7" y="22" width="50" height="31" rx="6" fill="' + u(p, 'a') + '"/>' +
+          '<path d="M7 36 q25 7 50 0" fill="none" stroke="#2B3340" stroke-opacity=".5" stroke-width="2.4"/>' +
+          '<path d="M7 28 a6 6 0 0 1 6 -6 h38 a6 6 0 0 1 6 6 v4 q-25 7 -50 0 z" fill="' + u(p, 's') + '" opacity=".6"/>' +
+          '<rect x="27" y="33" width="10" height="9" rx="2.2" fill="' + u(p, 'b') + '"/>' +
+          '<circle cx="32" cy="37.5" r="1.5" fill="#5C4012"/>',
+      };
+    },
+
+    pessoal(p) {
+      return {
+        sombra: '#B0A3FF',
+        defs: lin(p, 'a', PAL.lilas) + lin(p, 'b', PAL.dourado) + brilho(p),
+        corpo:
+          '<path d="M24 27 v-6 a8 8 0 0 1 16 0 v6" fill="none" stroke="#5547B8" stroke-width="3.6" stroke-linecap="round"/>' +
+          '<path d="M12 26 h40 l3 27 a4 4 0 0 1 -4 4 h-38 a4 4 0 0 1 -4 -4 z" fill="' + u(p, 'a') + '"/>' +
+          '<path d="M12 26 h40 l.8 7 q-20.8 6 -41.6 0 z" fill="' + u(p, 's') + '" opacity=".55"/>' +
+          '<circle cx="32" cy="43" r="5.2" fill="' + u(p, 'b') + '"/>' +
+          '<circle cx="32" cy="43" r="2" fill="#5C4012" opacity=".5"/>',
+      };
+    },
+
+    outros(p) {
+      return {
+        sombra: '#8B93A1',
+        defs: lin(p, 'a', PAL.cinza) + lin(p, 'b', PAL.cinzaEscuro) + lin(p, 'c', PAL.cinzaClaro) + lin(p, 'd', PAL.dourado),
+        corpo:
+          '<path d="M10 20 L32 32 V57 L10 45 z" fill="' + u(p, 'a') + '"/>' +
+          '<path d="M54 20 L32 32 V57 L54 45 z" fill="' + u(p, 'b') + '"/>' +
+          '<path d="M32 8 L54 20 L32 32 L10 20 z" fill="' + u(p, 'c') + '"/>' +
+          '<path d="M21 14 L43 26" stroke="' + u(p, 'd') + '" stroke-width="4"/>' +
+          '<path d="M10 20 L32 8 L54 20" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>',
+      };
+    },
+  };
+
+  // Nome desconhecido devolve o ícone de "outros".
+  function svgIcone(nome, tamanho) {
+    const desenho = ICONES[nome] || ICONES.outros;
+    contador += 1;
+    const p = 'ic' + contador + '-';
+    const d = desenho(p);
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="' + tamanho + '" height="' + tamanho +
+      '" aria-hidden="true" focusable="false"><defs>' + d.defs + '</defs>' +
+      '<ellipse cx="32" cy="60" rx="19" ry="2.6" fill="' + d.sombra + '" opacity=".3"/>' + d.corpo + '</svg>';
+  }
+
+  return { svgIcone };
+});
+
+;
+(function (raiz, fabrica) {
+  if (typeof module === 'object' && module.exports) module.exports = fabrica();
+  else raiz.Loja = fabrica();
+})(this, function () {
+  'use strict';
+
+  const clonar = (v) => JSON.parse(JSON.stringify(v));
+
+  // Loja em memória: usada nos testes e na versão de demonstração.
+  function criarLojaMemoria(inicial) {
+    let categorias = clonar((inicial && inicial.categorias) || []);
+    let lancamentos = clonar((inicial && inicial.lancamentos) || []);
+    return {
+      async carregar() {
+        return { categorias: clonar(categorias), lancamentos: clonar(lancamentos) };
+      },
+      async salvarLancamentos(ls) {
+        for (const l of ls) {
+          const i = lancamentos.findIndex((x) => x.id === l.id);
+          if (i >= 0) lancamentos[i] = clonar(l);
+          else lancamentos.push(clonar(l));
+        }
+      },
+      async apagarLancamento(id) {
+        lancamentos = lancamentos.filter((l) => l.id !== id);
+      },
+      async salvarCategorias(cs) {
+        categorias = clonar(cs);
+      },
+    };
+  }
+
+  // Loja no banco da página (capacidade `db`), no espaço privado de quem está vendo: data/users/<uid>.
+  // Os lançamentos ficam agrupados em um documento por mês ("m-AAAA-MM"), para não esbarrar no limite
+  // de documentos, e as categorias num documento só ("categorias").
+  // Cada escrita lê o documento do mês de novo antes de gravar, para que duas abas abertas ao mesmo
+  // tempo não apaguem os lançamentos uma da outra.
+  function criarLojaDb(db, uid) {
+    if (!db || !uid) throw new Error('é preciso um banco e o id de quem está vendo');
+    const col = db.collection('data/users/' + uid);
+    const idParaMes = new Map();
+    const mesDoc = (mes) => col.doc('m-' + mes);
+    const mesDe = (l) => l.data.slice(0, 7);
+
+    async function lerMes(mes) {
+      const snap = await mesDoc(mes).get();
+      const dado = snap.exists ? snap.data() : null;
+      return dado && Array.isArray(dado.itens) ? clonar(dado.itens) : [];
+    }
+    async function gravarMes(mes, itens) {
+      if (itens.length) await mesDoc(mes).set({ itens });
+      else await mesDoc(mes).delete();
+    }
+    const agrupar = (mapa, chave, valor) => {
+      if (!mapa.has(chave)) mapa.set(chave, []);
+      mapa.get(chave).push(valor);
+    };
+
+    return {
+      async carregar() {
+        const snap = await col.get();
+        let categorias = [];
+        const porId = new Map();
+        for (const d of snap.docs) {
+          const dado = clonar(d.data() || {});
+          if (d.id === 'categorias') {
+            categorias = Array.isArray(dado.lista) ? dado.lista : [];
+          } else if (d.id.startsWith('m-') && Array.isArray(dado.itens)) {
+            const mes = d.id.slice(2);
+            for (const l of dado.itens) {
+              const atual = porId.get(l.id);
+              // Cópia deixada por uma mudança de mês interrompida: vale a do mês da data do lançamento.
+              if (!atual || mesDe(l) === mes) porId.set(l.id, { l, mes });
+            }
+          }
+        }
+        idParaMes.clear();
+        const lancamentos = [];
+        for (const { l, mes } of porId.values()) {
+          lancamentos.push(l);
+          idParaMes.set(l.id, mes);
+        }
+        return { categorias, lancamentos };
+      },
+
+      async salvarLancamentos(ls) {
+        const novosPorMes = new Map();
+        const sairDoMes = new Map();
+        for (const l of ls) {
+          const novo = mesDe(l);
+          const antigo = idParaMes.get(l.id);
+          if (antigo && antigo !== novo) agrupar(sairDoMes, antigo, l.id);
+          agrupar(novosPorMes, novo, l);
+        }
+        // Primeiro grava no mês novo; só depois tira do antigo, para nunca perder o lançamento no meio.
+        for (const [mes, novos] of novosPorMes) {
+          const itens = await lerMes(mes);
+          for (const l of novos) {
+            const i = itens.findIndex((x) => x.id === l.id);
+            if (i >= 0) itens[i] = clonar(l);
+            else itens.push(clonar(l));
+          }
+          await gravarMes(mes, itens);
+          for (const l of novos) idParaMes.set(l.id, mes);
+        }
+        for (const [mes, ids] of sairDoMes) {
+          await gravarMes(mes, (await lerMes(mes)).filter((x) => !ids.includes(x.id)));
+        }
+      },
+
+      async apagarLancamento(id) {
+        const mes = idParaMes.get(id);
+        if (!mes) return;
+        await gravarMes(mes, (await lerMes(mes)).filter((x) => x.id !== id));
+        idParaMes.delete(id);
+      },
+
+      async salvarCategorias(cs) {
+        await col.doc('categorias').set({ lista: clonar(cs) });
+      },
+    };
+  }
+
+  return { criarLojaMemoria, criarLojaDb };
+});
+
+;
+(function (raiz, fabrica) {
+  if (typeof module === 'object' && module.exports) module.exports = fabrica();
+  else raiz.Nuvem = fabrica();
+})(this, function () {
+  'use strict';
+
+  const clonar = (v) => JSON.parse(JSON.stringify(v));
+  const PAGINA = 1000;
+
+  // Sessão de login no Supabase (e-mail + senha). Guarda o token no aparelho para não pedir a senha toda vez.
+  // `config`: { url, chave } (a chave é a publishable, que pode ser pública).
+  // `ambiente`: { fetch, armazenamento } — injetável para os testes.
+  function criarSessao(config, ambiente) {
+    const amb = ambiente || {};
+    const http = amb.fetch || ((...a) => fetch(...a));
+    const guarda = amb.armazenamento || (typeof localStorage !== 'undefined' ? localStorage : null);
+    const CHAVE_SESSAO = 'minhas-financas-sessao';
+    const base = config.url.replace(/\/+$/, '');
+    let sessao = null;
+
+    function lerGuardada() {
+      try { return guarda ? JSON.parse(guarda.getItem(CHAVE_SESSAO) || 'null') : null; } catch (e) { return null; }
+    }
+    function gravar(s) {
+      sessao = s;
+      try {
+        if (guarda) { if (s) guarda.setItem(CHAVE_SESSAO, JSON.stringify(s)); else guarda.removeItem(CHAVE_SESSAO); }
+      } catch (e) { /* sem armazenamento: o login vale só até fechar a página */ }
+    }
+    function daResposta(corpo) {
+      return {
+        token: corpo.access_token,
+        refresh: corpo.refresh_token,
+        expira: Date.now() + (Number(corpo.expires_in) || 3600) * 1000,
+        email: (corpo.user && corpo.user.email) || (sessao && sessao.email) || '',
+      };
+    }
+    async function pedirToken(grant, corpo) {
+      const r = await http(base + '/auth/v1/token?grant_type=' + grant, {
+        method: 'POST',
+        headers: { apikey: config.chave, 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      });
+      let json = null;
+      try { json = await r.json(); } catch (e) { json = null; }
+      return { ok: r.ok, status: r.status, json };
+    }
+
+    async function entrar(email, senha) {
+      let r;
+      try {
+        r = await pedirToken('password', { email: String(email).trim().toLowerCase(), password: senha });
+      } catch (e) {
+        throw new Error('Sem conexão. Confira a internet e tente de novo.');
+      }
+      if (!r.ok || !r.json || !r.json.access_token) {
+        throw new Error(r.status === 400 || r.status === 401 ? 'E-mail ou senha incorretos.' : 'Não foi possível entrar agora. Tente de novo.');
+      }
+      gravar(daResposta(r.json));
+      return sessao;
+    }
+
+    // Renova o token. Só desfaz o login se o servidor recusar de fato; se for falta de internet, mantém.
+    async function renovar() {
+      if (!sessao || !sessao.refresh) return false;
+      let r;
+      try { r = await pedirToken('refresh_token', { refresh_token: sessao.refresh }); } catch (e) { return false; }
+      if (r.ok && r.json && r.json.access_token) { gravar(daResposta(r.json)); return true; }
+      if (r.status === 400 || r.status === 401 || r.status === 403) gravar(null);
+      return false;
+    }
+
+    async function token() {
+      if (!sessao) return null;
+      if (Date.now() > sessao.expira - 60000) await renovar();
+      return sessao ? sessao.token : null;
+    }
+
+    function retomar() {
+      const s = lerGuardada();
+      if (s && s.token && s.refresh) { sessao = s; return true; }
+      return false;
+    }
+    function sair() { gravar(null); }
+
+    return { entrar, retomar, sair, token, renovar, email: () => (sessao ? sessao.email : ''), logado: () => !!sessao };
+  }
+
+  class ErroSessao extends Error {}
+
+  // Loja no Supabase: uma linha por lançamento (tabela `lancamentos`) e uma linha de categorias (tabela `ajustes`).
+  // Cada lançamento é gravado sozinho, então dois aparelhos lançando ao mesmo tempo não se atrapalham.
+  function criarLojaSupabase(config, sessao, ambiente) {
+    const http = (ambiente && ambiente.fetch) || ((...a) => fetch(...a));
+    const base = config.url.replace(/\/+$/, '') + '/rest/v1';
+
+    async function chamar(caminho, opcoes, jaRenovou) {
+      const t = await sessao.token();
+      if (!t) throw new ErroSessao('Sessão expirada. Entre de novo.');
+      const r = await http(base + caminho, Object.assign({}, opcoes, {
+        headers: Object.assign({ apikey: config.chave, Authorization: 'Bearer ' + t }, (opcoes && opcoes.headers) || {}),
+      }));
+      if (r.status === 401 && !jaRenovou) {
+        if (await sessao.renovar()) return chamar(caminho, opcoes, true);
+        throw new ErroSessao('Sessão expirada. Entre de novo.');
+      }
+      if (!r.ok) throw new Error('Falha ao falar com o banco (' + r.status + ').');
+      return r;
+    }
+
+    return {
+      async carregar() {
+        const lancamentos = [];
+        for (let de = 0; ; de += PAGINA) {
+          const r = await chamar('/lancamentos?select=dados&order=data.asc,id.asc', {
+            headers: { Range: de + '-' + (de + PAGINA - 1), 'Range-Unit': 'items' },
+          });
+          const linhas = await r.json();
+          for (const l of linhas) lancamentos.push(l.dados);
+          if (linhas.length < PAGINA) break;
+        }
+        const rc = await chamar('/ajustes?select=valor&chave=eq.categorias');
+        const lc = await rc.json();
+        const categorias = lc.length && Array.isArray(lc[0].valor) ? lc[0].valor : [];
+        return { categorias, lancamentos };
+      },
+
+      async salvarLancamentos(ls) {
+        if (!ls.length) return;
+        for (let i = 0; i < ls.length; i += 500) {
+          const corpo = ls.slice(i, i + 500).map((l) => ({ id: l.id, data: l.data, dados: clonar(l) }));
+          await chamar('/lancamentos?on_conflict=id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify(corpo),
+          });
+        }
+      },
+
+      async apagarLancamento(id) {
+        await chamar('/lancamentos?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+      },
+
+      async salvarCategorias(cs) {
+        await chamar('/ajustes?on_conflict=chave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([{ chave: 'categorias', valor: clonar(cs) }]),
+        });
+      },
+    };
+  }
+
+  return { criarSessao, criarLojaSupabase, ErroSessao };
+});
+
+;
+// Dados públicos do projeto no Supabase (a chave publishable pode ficar na página; quem protege os dados é o login).
+window.CONFIG_NUVEM = {
+  url: 'https://pqhhqymvqijwqgdgudvk.supabase.co',
+  chave: 'sb_publishable_RIfo5kZ8ALjCOnBbjR83xg_FDp_p-NC',
+};
+
+;
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+}
+
+;
+(function () {
+  'use strict';
+  const F = window.Financas;
+  const G = window.Graficos;
+  const I = window.Icones;
+  const e = F.escaparHtml;
+  const brl = F.formatBRL;
+  const $ = (id) => document.getElementById(id);
+
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+  const estado = {
+    loja: null,
+    mes: null,
+    categorias: [],
+    lancamentos: [],
+    filtro: { busca: '', tipo: '', categoriaId: '' },
+  };
+
+  const p2 = (n) => String(n).padStart(2, '0');
+  // Data de hoje como texto, pelo relógio local (nunca por UTC).
+  function hoje() {
+    const d = new Date();
+    return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+  }
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const rotuloMes = (mes) => cap(MESES[parseInt(mes.slice(5), 10) - 1]) + ' ' + mes.slice(0, 4);
+  const mesCurto = (mes) => MESES[parseInt(mes.slice(5), 10) - 1].slice(0, 3);
+
+  const OUTROS = { id: 'outros', nome: 'Outros', cor: '#6B7280', limite: null };
+  const categoria = (id) => estado.categorias.find((c) => c.id === id) || OUTROS;
+
+  const SETA = (d) => '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
+
+  // ---------- topo ----------
+
+  function renderSeletorMes() {
+    $('seletor-mes').innerHTML =
+      '<button type="button" class="mes-seta" data-dir="-1" aria-label="Mês anterior">' + SETA('M10 3 L5 8 L10 13') + '</button>' +
+      '<span class="mes-atual" aria-live="polite">' + e(rotuloMes(estado.mes)) + '</span>' +
+      '<button type="button" class="mes-seta" data-dir="1" aria-label="Próximo mês">' + SETA('M6 3 L11 8 L6 13') + '</button>';
+  }
+
+  // ---------- resumo ----------
+
+  function comparacao(comp, anteriorMes, temAnterior, bomQuandoSobe) {
+    if (!temAnterior) return '<span class="tile-comp">Sem dados em ' + mesCurto(anteriorMes) + '</span>';
+    const delta = comp.delta;
+    if (delta === 0) return '<span class="tile-comp">Igual a ' + mesCurto(anteriorMes) + '</span>';
+    const sobe = delta > 0;
+    const cor = sobe === bomQuandoSobe ? 'cor-positivo' : 'cor-negativo';
+    const quanto = comp.percentual === null ? brl(Math.abs(delta)) : Math.round(Math.abs(comp.percentual)) + '%';
+    return '<span class="tile-comp ' + cor + '">' + (sobe ? '▲' : '▼') + ' ' + quanto + ' <span class="tile-comp-ref">vs ' + mesCurto(anteriorMes) + '</span></span>';
+  }
+
+  function renderResumo(totais, anterior, temAnterior) {
+    const ant = F.somarMeses(estado.mes, -1);
+    const comp = F.compararMeses(totais, anterior);
+    const pctCartao = totais.saidas > 0 ? Math.round((totais.credito / totais.saidas) * 100) : 0;
+    const tile = (icone, rotulo, valor, cor, extra) =>
+      '<article class="tile"><span class="tile-icone">' + I.svgIcone(icone, 54) + '</span>' +
+      '<div class="tile-texto"><p class="tile-rotulo">' + rotulo + '</p>' +
+      '<p class="tile-valor ' + cor + '">' + valor + '</p>' + extra + '</div></article>';
+    $('resumo').innerHTML =
+      tile('entrada', 'Entradas', brl(totais.entradas), 'cor-positivo', comparacao(comp.entradas, ant, temAnterior, true)) +
+      tile('saida', 'Saídas', brl(totais.saidas), 'cor-negativo', comparacao(comp.saidas, ant, temAnterior, false)) +
+      tile('dinheiro', 'Saldo do mês', brl(totais.saldo), totais.saldo >= 0 ? 'cor-positivo' : 'cor-negativo', comparacao(comp.saldo, ant, temAnterior, true)) +
+      tile('cartao', 'No cartão de crédito', brl(totais.credito), 'cor-dourado',
+        '<span class="tile-comp">' + (totais.saidas > 0 ? pctCartao + '% das saídas' : 'Nenhum gasto no mês') + '</span>');
+  }
+
+  // ---------- saldo ----------
+
+  function renderSaldo(oc) {
+    const serie = F.serieSaldoDiario(oc, estado.mes);
+    $('saldo').innerHTML =
+      '<h2 class="cartao-titulo">Evolução do saldo</h2>' +
+      '<p class="legenda">Entradas menos saídas, somadas dia a dia</p>' +
+      '<div class="grafico">' + G.svgLinhaSaldo(serie, { largura: 640, altura: 230 }) + '</div>';
+  }
+
+  // ---------- categorias ----------
+
+  function renderCategorias(oc, totais) {
+    const gastos = F.gastosPorCategoria(oc, estado.categorias);
+    const sel = estado.filtro.categoriaId;
+    const rosca = G.svgRosca(gastos.map((g) => ({ id: g.categoriaId, cor: g.cor, valor: g.total })),
+      { tamanho: 240, selecionadoId: sel, centro: { titulo: 'Total de gastos', valor: brl(totais.saidas) } });
+    const linhas = gastos.map((g) => {
+      const barra = g.limite
+        ? '<span class="barra"><span class="barra-preench ' + (g.estourou ? 'fundo-negativo' : 'fundo-positivo') +
+          '" style="width:' + Math.min(100, Math.round(g.usoLimite * 100)) + '%"></span></span>' +
+          '<span class="limite-txt ' + (g.estourou ? 'cor-negativo' : '') + '">' + brl(g.total) + ' de ' + brl(g.limite) +
+          (g.estourou ? ' (limite estourado)' : '') + '</span>'
+        : '';
+      return '<li><button type="button" class="cat-linha" data-cat="' + e(g.categoriaId) + '" aria-pressed="' + (sel === g.categoriaId) + '">' +
+        '<span class="cat-icone">' + I.svgIcone(g.categoriaId, 40) + '</span>' +
+        '<span class="cat-nome">' + e(g.nome) + '<span class="cat-pct">' + Math.round(g.percentual) + '% dos gastos</span></span>' +
+        '<span class="cat-total">' + brl(g.total) + '</span>' + barra + '</button></li>';
+    }).join('');
+    $('categorias').innerHTML =
+      '<h2 class="cartao-titulo">Gastos por categoria</h2>' +
+      '<div class="rosca" id="rosca">' + rosca + '</div>' +
+      (gastos.length ? '<ul class="cat-lista">' + linhas + '</ul>' : '<p class="vazio">Nenhum gasto neste mês.</p>');
+  }
+
+  // ---------- lista ----------
+
+  const NOME_FORMA = { debito: 'Débito', credito: 'Crédito', pix: 'Pix', dinheiro: 'Dinheiro' };
+
+  function montarLista() {
+    $('lista').innerHTML =
+      '<div class="lista-cab"><h2 class="cartao-titulo">Lançamentos</h2><span id="lista-conta" class="legenda"></span></div>' +
+      '<div class="filtros">' +
+      '<input id="f-busca" type="search" placeholder="Buscar lançamento" aria-label="Buscar lançamento" autocomplete="off">' +
+      '<select id="f-tipo" aria-label="Tipo"><option value="">Todos os tipos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>' +
+      '<select id="f-cat" aria-label="Categoria"></select></div>' +
+      '<ul id="lista-itens" class="itens"></ul>';
+    montarFiltroCategorias();
+  }
+
+  function montarFiltroCategorias() {
+    const el = $('f-cat');
+    if (!el) return;
+    el.innerHTML = '<option value="">Todas as categorias</option>' +
+      estado.categorias.map((c) => '<option value="' + e(c.id) + '">' + e(c.nome) + '</option>').join('');
+    el.value = estado.filtro.categoriaId;
+  }
+
+  function renderLista(oc) {
+    const itens = F.filtrarOcorrencias(oc, estado.filtro);
+    const filtrado = estado.filtro.busca || estado.filtro.tipo || estado.filtro.categoriaId;
+    $('lista-conta').textContent = itens.length + (itens.length === 1 ? ' lançamento' : ' lançamentos');
+    $('f-cat').value = estado.filtro.categoriaId;
+    if (!itens.length) {
+      $('lista-itens').innerHTML = '<li class="vazio">' + (filtrado
+        ? 'Nada encontrado com esses filtros.'
+        : 'Nenhum lançamento neste mês. Use “Novo lançamento” para começar.') + '</li>';
+      return;
+    }
+    $('lista-itens').innerHTML = itens.map((o) => {
+      const c = categoria(o.categoriaId);
+      const entrada = o.tipo === 'entrada';
+      let chip = '';
+      if (o.forma === 'credito') {
+        chip = '<span class="chip">Crédito' + (o.cartao ? ' ' + e(o.cartao) : '') + (o.parcelaTotal > 1 ? ' ' + o.parcelaNum + '/' + o.parcelaTotal : '') + '</span>';
+      } else {
+        chip = '<span class="forma">' + (NOME_FORMA[o.forma] || '') + '</span>';
+      }
+      return '<li><button type="button" class="item" data-lanc="' + e(o.lancamentoId) + '">' +
+        '<span class="item-icone">' + I.svgIcone(c.id, 40) + '</span>' +
+        '<span class="item-corpo"><span class="item-desc">' + e(o.descricao) + '</span>' +
+        '<span class="item-meta"><span>' + F.formatData(o.data).slice(0, 5) + '</span><span>' + e(c.nome) + '</span>' + chip + '</span></span>' +
+        '<span class="item-valor ' + (entrada ? 'cor-positivo' : 'cor-negativo') + '">' + (entrada ? '+ ' : '− ') + brl(o.valor) + '</span>' +
+        '</button></li>';
+    }).join('');
+  }
+
+  // ---------- geral ----------
+
+  function renderizar() {
+    const oc = F.ocorrenciasDoMes(estado.lancamentos, estado.mes);
+    const totais = F.totaisDoMes(oc);
+    const ocAnt = F.ocorrenciasDoMes(estado.lancamentos, F.somarMeses(estado.mes, -1));
+    const anterior = F.totaisDoMes(ocAnt);
+    renderSeletorMes();
+    renderResumo(totais, anterior, ocAnt.length > 0);
+    renderSaldo(oc);
+    renderCategorias(oc, totais);
+    renderLista(oc);
+  }
+
+  function alternarCategoria(id) {
+    estado.filtro.categoriaId = estado.filtro.categoriaId === id ? '' : id;
+    renderizar();
+  }
+
+  function ligarEventos() {
+    $('seletor-mes').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-dir]');
+      if (!b) return;
+      estado.mes = F.somarMeses(estado.mes, parseInt(b.dataset.dir, 10));
+      renderizar();
+    });
+    $('categorias').addEventListener('click', (ev) => {
+      const alvo = ev.target.closest('[data-cat], [data-id]');
+      if (alvo) alternarCategoria(alvo.dataset.cat || alvo.dataset.id);
+    });
+    $('btn-exportar').addEventListener('click', exportarCsv);
+    $('btn-atualizar').addEventListener('click', () => atualizar(false));
+    // Ao voltar para a página depois de um tempo, lê o banco de novo.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && Date.now() - ultimaLeitura > 30000) atualizar(true);
+    });
+    window.addEventListener('focus', () => {
+      if (Date.now() - ultimaLeitura > 30000) atualizar(true);
+    });
+    $('btn-novo').addEventListener('click', () => abrirFormulario());
+    $('btn-categorias').addEventListener('click', abrirCategorias);
+    $('lista').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-lanc]');
+      if (b) abrirFormulario(b.dataset.lanc);
+    });
+    $('lista').addEventListener('input', (ev) => {
+      if (ev.target.id === 'f-busca') { estado.filtro.busca = ev.target.value; renderizar(); $('f-busca').focus(); }
+    });
+    $('lista').addEventListener('change', (ev) => {
+      if (ev.target.id === 'f-tipo') { estado.filtro.tipo = ev.target.value; renderizar(); }
+      if (ev.target.id === 'f-cat') { estado.filtro.categoriaId = ev.target.value; renderizar(); }
+    });
+  }
+
+  // ---------- janelas ----------
+
+  let modalAberto = null;
+  function escListener(ev) { if (ev.key === 'Escape') fecharModal(); }
+  function fecharModal() {
+    if (!modalAberto) return;
+    modalAberto.fundo.remove();
+    document.removeEventListener('keydown', escListener);
+    if (modalAberto.ultimoFoco && modalAberto.ultimoFoco.focus) modalAberto.ultimoFoco.focus();
+    modalAberto = null;
+  }
+  function abrirModal(titulo, corpo, larga) {
+    const ultimoFoco = modalAberto ? modalAberto.ultimoFoco : document.activeElement;
+    if (modalAberto) { modalAberto.fundo.remove(); document.removeEventListener('keydown', escListener); modalAberto = null; }
+    const fundo = document.createElement('div');
+    fundo.className = 'fundo-modal';
+    fundo.innerHTML = '<div class="modal' + (larga ? ' modal-larga' : '') + '" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">' +
+      '<div class="modal-cab"><h2 id="modal-titulo" class="cartao-titulo">' + e(titulo) + '</h2>' +
+      '<button type="button" class="modal-fechar" aria-label="Fechar">' + SETA('M3 3 L13 13 M13 3 L3 13') + '</button></div>' + corpo + '</div>';
+    $('camada').appendChild(fundo);
+    fundo.addEventListener('mousedown', (ev) => { if (ev.target === fundo) fecharModal(); });
+    fundo.querySelector('.modal-fechar').addEventListener('click', fecharModal);
+    document.addEventListener('keydown', escListener);
+    modalAberto = { fundo, ultimoFoco };
+    const primeiro = fundo.querySelector('input:not([type="radio"]), select, button.botao-principal');
+    if (primeiro) primeiro.focus();
+    return fundo.querySelector('.modal');
+  }
+
+  // ---------- lançamento: formulário ----------
+
+  const FORMAS = [['debito', 'Débito'], ['credito', 'Crédito'], ['pix', 'Pix'], ['dinheiro', 'Dinheiro']];
+
+  function segmentado(nome, opcoes, atual) {
+    return '<div class="seg" role="radiogroup">' + opcoes.map(([val, rot]) =>
+      '<label class="seg-op seg-' + val + '"><input type="radio" name="' + nome + '" value="' + val + '"' +
+      (atual === val ? ' checked' : '') + '><span>' + rot + '</span></label>').join('') + '</div>';
+  }
+
+  function htmlFormulario(l) {
+    const v = l || {
+      tipo: 'saida', data: hoje(), descricao: '', valor: null,
+      categoriaId: estado.categorias[0] ? estado.categorias[0].id : 'outros', forma: 'debito', cartao: '', parcelas: 1,
+    };
+    const valorTxt = v.valor ? (v.valor / 100).toFixed(2).replace('.', ',') : '';
+    const cartoes = [...new Set(estado.lancamentos.map((x) => x.cartao).filter(Boolean))];
+    const aviso = l && l.forma === 'credito' && l.parcelas > 1
+      ? '<p class="ajuda ajuda-destaque">Compra em ' + l.parcelas + ' parcelas. Mudar algo aqui altera todas elas.</p>' : '';
+    return '<form id="form-lanc" novalidate>' + aviso +
+      '<div class="campo"><span class="rotulo">Tipo</span>' + segmentado('tipo', [['saida', 'Saída'], ['entrada', 'Entrada']], v.tipo) + '</div>' +
+      '<div class="linha2">' +
+      '<div class="campo"><label class="rotulo" for="lf-valor">Valor</label><input id="lf-valor" name="valor" inputmode="decimal" placeholder="0,00" value="' + valorTxt + '" autocomplete="off"></div>' +
+      '<div class="campo"><label class="rotulo" for="lf-data">Data</label><input id="lf-data" name="data" type="date" value="' + e(v.data) + '"></div></div>' +
+      '<div class="campo"><label class="rotulo" for="lf-desc">Descrição</label><input id="lf-desc" name="descricao" value="' + e(v.descricao) + '" maxlength="80" autocomplete="off"></div>' +
+      '<div class="campo"><label class="rotulo" for="lf-cat">Categoria</label><select id="lf-cat" name="categoriaId">' +
+      estado.categorias.map((c) => '<option value="' + e(c.id) + '"' + (c.id === v.categoriaId ? ' selected' : '') + '>' + e(c.nome) + '</option>').join('') +
+      '</select></div>' +
+      '<div class="campo"><span class="rotulo">Forma de pagamento</span>' + segmentado('forma', FORMAS, v.forma) + '</div>' +
+      '<div id="bloco-credito" class="bloco-credito"' + (v.forma === 'credito' ? '' : ' hidden') + '>' +
+      '<div class="linha2">' +
+      '<div class="campo"><label class="rotulo" for="lf-cartao">Cartão</label><input id="lf-cartao" name="cartao" list="lista-cartoes" value="' + e(v.cartao || '') + '" maxlength="30" autocomplete="off" placeholder="Ex.: Nubank">' +
+      '<datalist id="lista-cartoes">' + cartoes.map((c) => '<option value="' + e(c) + '">').join('') + '</datalist></div>' +
+      '<div class="campo"><label class="rotulo" for="lf-parcelas">Parcelas</label><input id="lf-parcelas" name="parcelas" type="number" min="1" max="48" step="1" inputmode="numeric" value="' + (v.parcelas || 1) + '"></div></div>' +
+      '<p id="ajuda-parcelas" class="ajuda"></p></div>' +
+      '<p id="erros-form" class="erros" role="alert" hidden></p>' +
+      '<div class="modal-rodape">' + (l ? '<button type="button" id="btn-apagar" class="botao-perigo">Apagar</button>' : '') +
+      '<span class="espaco"></span><button type="button" class="botao-sec" id="btn-cancelar">Cancelar</button>' +
+      '<button type="submit" class="botao-principal" id="btn-salvar">Salvar</button></div></form>';
+  }
+
+  function abrirFormulario(id) {
+    if (estado.semBanco) return;
+    const l = id ? estado.lancamentos.find((x) => x.id === id) : null;
+    const modal = abrirModal(l ? 'Editar lançamento' : 'Novo lançamento', htmlFormulario(l));
+    const form = modal.querySelector('#form-lanc');
+    const erros = modal.querySelector('#erros-form');
+
+    const atualizar = () => {
+      const entrada = form.elements.tipo.value === 'entrada';
+      const cred = form.querySelector('input[name="forma"][value="credito"]');
+      cred.disabled = entrada;
+      cred.closest('.seg-op').classList.toggle('desativado', entrada);
+      if (entrada && form.elements.forma.value === 'credito') form.querySelector('input[name="forma"][value="pix"]').checked = true;
+      const credito = form.elements.forma.value === 'credito';
+      modal.querySelector('#bloco-credito').hidden = !credito;
+      const ajuda = modal.querySelector('#ajuda-parcelas');
+      ajuda.textContent = '';
+      if (credito) {
+        const valor = F.parseValor(form.elements.valor.value);
+        const n = Number(form.elements.parcelas.value);
+        const data = form.elements.data.value;
+        if (valor && Number.isInteger(n) && n > 1 && n <= 48 && F.dataValida(data)) {
+          const primeira = F.expandirParcelas({ id: 'x', tipo: 'saida', data, descricao: '', valor, categoriaId: '', forma: 'credito', parcelas: n })[0];
+          ajuda.textContent = n + ' parcelas de ' + brl(primeira.valor) + ', uma por mês a partir de ' + rotuloMes(F.mesDe(data)).toLowerCase() + '.';
+        }
+      }
+    };
+    form.addEventListener('input', atualizar);
+    form.addEventListener('change', atualizar);
+    atualizar();
+
+    modal.querySelector('#btn-cancelar').addEventListener('click', fecharModal);
+    const apagar = modal.querySelector('#btn-apagar');
+    if (apagar) apagar.addEventListener('click', () => confirmarApagar(l));
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const campos = {};
+      for (const [k, val] of new FormData(form).entries()) campos[k] = val;
+      const r = F.montarLancamento(campos, l ? l.id : undefined);
+      if (!r.lancamento) {
+        erros.innerHTML = r.erros.map(e).join('<br>');
+        erros.hidden = false;
+        return;
+      }
+      const botao = modal.querySelector('#btn-salvar');
+      botao.disabled = true;
+      try {
+        await estado.loja.salvarLancamentos([r.lancamento]);
+      } catch (err) {
+        erros.textContent = textoErro(err, 'Não foi possível salvar. Tente de novo.');
+        erros.hidden = false;
+        botao.disabled = false;
+        return;
+      }
+      const i = estado.lancamentos.findIndex((x) => x.id === r.lancamento.id);
+      if (i >= 0) estado.lancamentos[i] = r.lancamento; else estado.lancamentos.push(r.lancamento);
+      estado.mes = F.mesDe(r.lancamento.data);
+      fecharModal();
+      renderizar();
+    });
+  }
+
+  function confirmarApagar(l) {
+    const parcelado = l.forma === 'credito' && l.parcelas > 1;
+    const modal = abrirModal('Apagar lançamento?',
+      '<p class="texto-modal">“' + e(l.descricao) + '” de ' + brl(l.valor) + ' será apagado' +
+      (parcelado ? ', junto com as ' + l.parcelas + ' parcelas' : '') + '. Não dá para desfazer.</p>' +
+      '<p id="erros-form" class="erros" role="alert" hidden></p>' +
+      '<div class="modal-rodape"><span class="espaco"></span><button type="button" class="botao-sec" id="btn-nao">Voltar</button>' +
+      '<button type="button" class="botao-perigo-cheio" id="btn-sim">Apagar</button></div>');
+    modal.querySelector('#btn-nao').addEventListener('click', () => abrirFormulario(l.id));
+    modal.querySelector('#btn-sim').addEventListener('click', async () => {
+      try {
+        await estado.loja.apagarLancamento(l.id);
+      } catch (err) {
+        const out = modal.querySelector('#erros-form');
+        out.textContent = textoErro(err, 'Não foi possível apagar. Tente de novo.');
+        out.hidden = false;
+        return;
+      }
+      estado.lancamentos = estado.lancamentos.filter((x) => x.id !== l.id);
+      fecharModal();
+      renderizar();
+    });
+  }
+
+  // ---------- categorias: edição ----------
+
+  const PALETA = ['#FF9F5A', '#38BDF8', '#6C8CFF', '#A78BFA', '#22D3EE', '#F472B6', '#E879F9', '#94A3B8', '#B0A3FF', '#FDBA74'];
+  const centavosTxt = (c) => (c ? (c / 100).toFixed(2).replace('.', ',') : '');
+
+  function abrirCategorias() {
+    if (estado.semBanco) return;
+    let trabalho = estado.categorias.map((c) => Object.assign({}, c, { removida: false, limiteTxt: centavosTxt(c.limite) }));
+
+    const htmlLinha = (c, i) => {
+      const usados = estado.lancamentos.filter((l) => l.categoriaId === c.id).length;
+      let acao;
+      if (c.id === 'outros') acao = '<span class="ce-fixa">Fixa</span>';
+      else if (c.removida) acao = '<button type="button" class="botao-sec" data-acao="desfazer">Desfazer</button>';
+      else acao = '<button type="button" class="botao-icone" data-acao="remover" aria-label="Remover ' + e(c.nome) + '">' + SETA('M3 3 L13 13 M13 3 L3 13') + '</button>';
+      return '<div class="cat-edit' + (c.removida ? ' removida' : '') + '" data-linha="' + i + '">' +
+        '<span class="cat-icone">' + I.svgIcone(c.id, 36) + '</span>' +
+        '<input class="ce-nome" aria-label="Nome da categoria" value="' + e(c.nome) + '" maxlength="30">' +
+        '<input class="ce-cor" type="color" aria-label="Cor de ' + e(c.nome) + '" value="' + e(c.cor) + '">' +
+        '<input class="ce-limite" aria-label="Limite mensal de ' + e(c.nome) + ', em reais" inputmode="decimal" placeholder="Sem limite" value="' + e(c.limiteTxt) + '">' +
+        acao +
+        (c.removida ? '<p class="ce-aviso">Será removida ao salvar' + (usados ? '; ' + usados + (usados > 1 ? ' lançamentos vão' : ' lançamento vai') + ' para Outros' : '') + '.</p>' : '') +
+        '</div>';
+    };
+
+    const modal = abrirModal('Categorias',
+      '<p class="ajuda">Defina um limite mensal para ver a barra de progresso no painel. Deixe em branco para não ter limite.</p>' +
+      '<div id="cat-linhas" class="cat-linhas"></div>' +
+      '<p id="erros-form" class="erros" role="alert" hidden></p>' +
+      '<div class="modal-rodape"><button type="button" class="botao-sec" id="btn-add-cat">Adicionar categoria</button><span class="espaco"></span>' +
+      '<button type="button" class="botao-sec" id="btn-cancelar">Cancelar</button><button type="button" class="botao-principal" id="btn-salvar">Salvar</button></div>', true);
+    const area = modal.querySelector('#cat-linhas');
+    const erros = modal.querySelector('#erros-form');
+
+    const desenhar = () => { area.innerHTML = trabalho.map(htmlLinha).join(''); };
+    const ler = () => {
+      area.querySelectorAll('.cat-edit').forEach((el) => {
+        const c = trabalho[parseInt(el.dataset.linha, 10)];
+        c.nome = el.querySelector('.ce-nome').value;
+        c.cor = el.querySelector('.ce-cor').value;
+        c.limiteTxt = el.querySelector('.ce-limite').value;
+      });
+    };
+    desenhar();
+
+    area.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-acao]');
+      if (!b) return;
+      ler();
+      const c = trabalho[parseInt(b.closest('.cat-edit').dataset.linha, 10)];
+      c.removida = b.dataset.acao === 'remover';
+      desenhar();
+    });
+    modal.querySelector('#btn-add-cat').addEventListener('click', () => {
+      ler();
+      trabalho.push({ id: 'cat-' + F.novoId(), nome: 'Nova categoria', cor: PALETA[trabalho.length % PALETA.length], limite: null, removida: false, limiteTxt: '', nova: true });
+      desenhar();
+      const nomes = area.querySelectorAll('.ce-nome');
+      const ultimo = nomes[nomes.length - 1];
+      ultimo.focus();
+      ultimo.select();
+    });
+    modal.querySelector('#btn-cancelar').addEventListener('click', fecharModal);
+
+    modal.querySelector('#btn-salvar').addEventListener('click', async () => {
+      ler();
+      const msgs = [];
+      const ativas = trabalho.filter((c) => !c.removida);
+      const novas = ativas.map((c) => {
+        const nome = c.nome.trim();
+        if (!nome) msgs.push('Dê um nome a todas as categorias.');
+        let limite = null;
+        if (c.limiteTxt.trim() !== '') {
+          limite = F.parseValor(c.limiteTxt);
+          if (limite === null) msgs.push('Limite inválido em “' + (nome || 'sem nome') + '”.');
+        }
+        return { id: c.id, nome, cor: c.cor, limite };
+      });
+      const nomesBaixos = novas.map((c) => c.nome.toLowerCase());
+      if (new Set(nomesBaixos).size !== nomesBaixos.length) msgs.push('Duas categorias têm o mesmo nome.');
+      if (msgs.length) {
+        erros.innerHTML = [...new Set(msgs)].map(e).join('<br>');
+        erros.hidden = false;
+        return;
+      }
+      const removidas = trabalho.filter((c) => c.removida && !c.nova).map((c) => c.id);
+      let lanc = estado.lancamentos;
+      for (const id of removidas) lanc = F.removerCategoria({ categorias: estado.categorias, lancamentos: lanc }, id).lancamentos;
+      const alterados = lanc.filter((l, i) => l.categoriaId !== estado.lancamentos[i].categoriaId);
+      try {
+        await estado.loja.salvarCategorias(novas);
+        if (alterados.length) await estado.loja.salvarLancamentos(alterados);
+      } catch (err) {
+        erros.textContent = textoErro(err, 'Não foi possível salvar. Tente de novo.');
+        erros.hidden = false;
+        return;
+      }
+      estado.categorias = novas;
+      estado.lancamentos = lanc;
+      if (removidas.includes(estado.filtro.categoriaId)) estado.filtro.categoriaId = '';
+      montarFiltroCategorias();
+      fecharModal();
+      renderizar();
+    });
+  }
+
+  async function iniciar(loja) {
+    estado.loja = loja;
+    let dados;
+    try {
+      dados = await loja.carregar();
+    } catch (err) {
+      semBanco('Não foi possível carregar seus lançamentos.');
+      estado.loja = window.Loja.criarLojaMemoria();
+      dados = { categorias: [], lancamentos: [] };
+    }
+    estado.lancamentos = dados.lancamentos;
+    if (dados.categorias.length) {
+      estado.categorias = dados.categorias;
+    } else {
+      estado.categorias = F.CATEGORIAS_INICIAIS.map((c) => Object.assign({}, c));
+      try { await estado.loja.salvarCategorias(estado.categorias); } catch (err) { /* tenta de novo na próxima alteração */ }
+    }
+    estado.mes = F.mesDe(hoje());
+    montarLista();
+    ligarEventos();
+    renderizar();
+  }
+
+  const textoErro = (err, padrao) => (window.Nuvem && err instanceof window.Nuvem.ErroSessao
+    ? 'Sua sessão expirou. Toque em Sair e entre de novo.' : padrao);
+
+  function mostrarAviso(texto) {
+    const el = $('aviso');
+    el.textContent = texto;
+    el.hidden = false;
+  }
+
+  // Sem banco, a página só mostra o aviso: nada é salvo e os botões de lançar ficam desligados.
+  function semBanco(motivo) {
+    estado.semBanco = true;
+    mostrarAviso(motivo + ' Nada que você lançar aqui será salvo.' + (window.CONFIG_NUVEM ? ' Confira a internet e abra a página de novo.' : ' Abra a página pelo link do Claude, com a sessão iniciada.'));
+    $('btn-novo').disabled = true;
+    $('btn-categorias').disabled = true;
+    $('btn-atualizar').hidden = true;
+  }
+
+  const comPrazo = (promessa, ms) => Promise.race([promessa, new Promise((r) => setTimeout(() => r(null), ms))]);
+  const capacidade = (nome) => (window.claude && window.claude.use
+    ? comPrazo(Promise.resolve(window.claude.use(nome)), 10000).catch(() => null)
+    : Promise.resolve(null));
+
+  // Lê o banco de novo, sem sair do mês nem perder filtros. Serve para pegar mudanças feitas em outra aba
+  // ou em outro aparelho. Se um formulário estiver aberto, não mexe na tela.
+  let ultimaLeitura = Date.now();
+  let atualizando = false;
+  async function atualizar(silencioso) {
+    if (atualizando || estado.semBanco || !estado.loja) return;
+    if ($('camada').children.length) return;
+    atualizando = true;
+    const btn = $('btn-atualizar');
+    btn.disabled = true;
+    btn.textContent = 'Atualizando…';
+    try {
+      const dados = await estado.loja.carregar();
+      estado.lancamentos = dados.lancamentos;
+      if (dados.categorias.length) estado.categorias = dados.categorias;
+      ultimaLeitura = Date.now();
+      renderizar();
+    } catch (err) {
+      if (!silencioso || (window.Nuvem && err instanceof window.Nuvem.ErroSessao)) mostrarAviso(textoErro(err, 'Não foi possível atualizar agora. Tente de novo em instantes.'));
+    } finally {
+      atualizando = false;
+      btn.disabled = false;
+      btn.textContent = 'Atualizar';
+    }
+  }
+
+  async function exportarCsv() {
+    const dl = estado.downloads;
+    if (!dl) return;
+    const todos = estado.lancamentos.slice().sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+    try {
+      await dl.save({ filename: 'financas-' + hoje() + '.csv', data: F.paraCSV(todos, estado.categorias) });
+    } catch (err) {
+      if (err && err.code === 'declined') return;
+      mostrarAviso('Não foi possível exportar o CSV. Tente de novo.');
+    }
+  }
+
+  // Tela de login da versão instalável: só sai dela quem entrou com e-mail e senha corretos.
+  function telaLogin(sessao) {
+    return new Promise((resolve) => {
+      const fundo = document.createElement('div');
+      fundo.className = 'fundo-modal fundo-login';
+      fundo.innerHTML = '<form class="modal login" novalidate>' +
+        '<div class="marca login-marca"><span class="marca-selo" aria-hidden="true">M</span><span class="marca-nome">Minhas Finanças</span></div>' +
+        '<h2 id="modal-titulo" class="cartao-titulo">Entrar</h2>' +
+        '<p class="ajuda">Use o e-mail e a senha cadastrados para você.</p>' +
+        '<p id="erro-login" class="erros" role="alert" hidden></p>' +
+        '<label class="campo"><span class="rotulo">E-mail</span><input type="email" id="lg-email" autocomplete="username" autocapitalize="none" spellcheck="false"></label>' +
+        '<label class="campo"><span class="rotulo">Senha</span><input type="password" id="lg-senha" autocomplete="current-password"></label>' +
+        '<button type="submit" class="botao-principal login-entrar">Entrar</button></form>';
+      $('camada').appendChild(fundo);
+      const form = fundo.querySelector('form');
+      const erro = fundo.querySelector('#erro-login');
+      const campoEmail = fundo.querySelector('#lg-email');
+      campoEmail.focus();
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const email = campoEmail.value.trim();
+        const senha = fundo.querySelector('#lg-senha').value;
+        if (!email || !senha) { erro.textContent = 'Preencha o e-mail e a senha.'; erro.hidden = false; return; }
+        const botao = form.querySelector('button[type="submit"]');
+        botao.disabled = true;
+        botao.textContent = 'Entrando…';
+        try {
+          await sessao.entrar(email, senha);
+          fundo.remove();
+          resolve();
+        } catch (err) {
+          erro.textContent = err.message;
+          erro.hidden = false;
+          botao.disabled = false;
+          botao.textContent = 'Entrar';
+        }
+      });
+    });
+  }
+
+  // Baixa o CSV pelo navegador (a versão instalável não tem o "downloads" do Claude).
+  function downloadsDoNavegador() {
+    return {
+      async save({ filename, data }) {
+        const blob = new Blob(['\uFEFF' + data], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      },
+    };
+  }
+
+  async function abrirLojaNuvem() {
+    const config = window.CONFIG_NUVEM;
+    const sessao = window.Nuvem.criarSessao(config);
+    if (sessao.retomar()) await sessao.renovar();
+    if (!sessao.logado()) await telaLogin(sessao);
+    const sair = $('btn-sair');
+    sair.hidden = false;
+    sair.addEventListener('click', () => { sessao.sair(); location.reload(); });
+    return window.Nuvem.criarLojaSupabase(config, sessao);
+  }
+
+  async function abrirLoja() {
+    if (window.DADOS_DEMO) return window.Loja.criarLojaMemoria(window.DADOS_DEMO);
+    if (window.CONFIG_NUVEM) return abrirLojaNuvem();
+    const db = await capacidade('db');
+    const usuario = await capacidade('user');
+    const uid = usuario ? await usuario.id() : null;
+    return db && uid ? window.Loja.criarLojaDb(db, uid) : null;
+  }
+
+  async function partir() {
+    $('resumo').innerHTML = '<p class="vazio">Abrindo suas finanças…</p>';
+    estado.downloads = window.DADOS_DEMO ? null : window.CONFIG_NUVEM ? downloadsDoNavegador() : await capacidade('downloads');
+    $('btn-exportar').hidden = !estado.downloads;
+    let loja = null;
+    try { loja = await abrirLoja(); } catch (err) { loja = null; }
+    if (!loja) {
+      semBanco('Não foi possível abrir o banco de dados desta página.');
+      loja = window.Loja.criarLojaMemoria();
+    }
+    await iniciar(loja);
+  }
+
+  partir();
+  window.MinhasFinancas = { estado, hoje, renderizar, mostrarAviso, categoria, montarFiltroCategorias };
+})();
+
+</script>
+</body>
+</html>
